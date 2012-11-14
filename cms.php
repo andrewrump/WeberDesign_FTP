@@ -3,21 +3,22 @@
 $scriptname = $_SERVER["SCRIPT_NAME"];
 $scriptfilename = $_SERVER["SCRIPT_FILENAME"];
 $dirname = dirname($scriptfilename);
-$homepage = (strcmp($_SERVER["DOCUMENT_ROOT"], $dirname) == 0);
+$docroot = $_SERVER["DOCUMENT_ROOT"];
+$homepage = (strcmp($docroot, $dirname) == 0);
 $debug = $_REQUEST["debug"];
 $hidden = $_REQUEST["hidden"];
 
 #############################################################################################
 
-function DIV($contentvalue, $id)
+function DIV($id= NULL, $contentvalue = NULL)
 {
-  if (is_numeric($contentvalue))
-    if ($contentvalue)
-      return "<DIV ID=\"" . $id . "\">\n";
+  if (is_null($id) or is_null($contentvalue) or is_numeric($contentvalue))
+    if (!is_null($contentvalue) and $contentvalue)
+      return "<DIV ID=\"" . $id. "\">\n";
     else
       return "</DIV>\n";
   else
-    return "<DIV ID =\"" . $id . "\">\n" . $contentvalue . "</DIV>\n";
+    return "<DIV ID=\"" . $id. "\">\n" . $contentvalue . "</DIV>\n";
 }
 
 function H($level, $header)
@@ -45,10 +46,10 @@ function BR()
   return "<BR>\n";
 }
 
-function HREF($text, $link, $target = "", $newline = true, $active = true)
+function HREF($text, $link, $target = NULL, $newline = true, $active = true)
 {
   if ($active)
-    if (strlen($target) > 0)
+    if (!is_null($target) and strlen($target) > 0)
       return "<A HREF=\"" . $link . "\" TARGET=\"" . $target . "\">" . $text . "</A>" .
              ($newline ? "\n" : "");
     else
@@ -77,6 +78,44 @@ function LI($tekst)
   return "<LI>" . $tekst . "</LI>\n";
 }
 
+function IMG($path)
+{
+  return "<IMG SRC=\"" . $path . "\">\n";
+}
+
+function TABLE($contentvalue)
+{
+  if (is_numeric($contentvalue))
+    if ($contentvalue)
+      return "<TABLE>\n";
+    else
+      return "</TABLE>\n";
+  else
+    return "<TABLE>\n" . $contentvalue . "</TABLE>\n";
+}
+
+function TR($contentvalue)
+{
+  if (is_numeric($contentvalue))
+    if ($contentvalue)
+      return "<TR>\n";
+    else
+      return "</TR>\n";
+  else
+    return "<TR>\n" . $contentvalue . "</TR>\n";
+}
+
+function TD($contentvalue)
+{
+  if (is_numeric($contentvalue))
+    if ($contentvalue)
+      return "<TD>\n";
+    else
+      return "</TD>\n";
+  else
+    return "<TD>\n" . $contentvalue . "</TD>\n";
+}
+
 #############################################################################################
 
 function cms_control($scriptfilename)
@@ -100,7 +139,7 @@ function cms_control($scriptfilename)
 
 function cms($indhold)
 {
-  global $scriptname, $scriptfilename, $dirname, $homepage, $debug, $hidden;
+  global $scriptname, $scriptfilename, $docroot, $dirname, $homepage, $debug, $hidden;
 
   $control = cms_control($scriptfilename);
 ?>
@@ -120,13 +159,22 @@ function cms($indhold)
 <META NAME="COPYRIGHT" CONTENT="Copyright: © 2012 Andrew Rump">
 
 <STYLE>
-HR {color:sienna;}
+/*HR {color:sienna;}*/
+H1 { font-style: italic; }
+H2 { font-style: italic; }
+H3 { font-style: italic; }
+H4 { font-style: italic; }
+H5 { font-style: italic; }
+H6 { font-style: italic; }
+P { font-style: italic; font-size: 15}
+LI { font-style: italic; }
 /*P {margin-left:20px;}*/
 /*body {background-image:url("images/back40.gif");}*/
 body {
 color:white;
 background-color:black;
 }
+#galleria{ width: 700px; height: 400px; background: #000 }
 </STYLE>
 
 <META HTTP-EQUIV="Window-target" CONTENT="_top"> 
@@ -137,28 +185,14 @@ if(top != self)
 // The above script get the page out of frames -->
 </SCRIPT>
 
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>
+<script src="/include/galleria/galleria-1.2.8.min.js"></script>
+
 </HEAD>
 <BODY>
-
-<!--
-<UL><LI>
-<A NAME="top">
-<?php if (!$homepage) { ?>
-  <A HREF="/">
-<?php } ?>
-Weber Design
-<?php if (!$homepage) { ?>
-  </A>
-<?php } ?>
-</A>
--->
-
 <?php
-
-print DIV(1, "header");
+print DIV("header", 1);
 print UL(1);
-
-#print LI(HREF("Weber Design", "/index1.php", "", false, !$homepage));
 
 if (!$homepage) {
   if ($hDir = opendir($dirname . "/..")) {
@@ -166,12 +200,12 @@ if (!$homepage) {
       $control = cms_control( "../" . $entry);
       if (is_dir("../" . $entry) and $entry[0] != '.') {
         if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-          print LI(HREF($control[2], "../" . $entry, "", false));
+          print LI(HREF($control[2], "../" . $entry, NULL, false));
         }
       } else {
         if (is_file("../" . $entry)) {# and strncmp(strrev($entry) == 0) {
           if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-            print LI(HREF($control[2], "../" . $entry, "", false));
+            print LI(HREF($control[2], "../" . $entry, NULL, false));
           }
         }
       }
@@ -185,14 +219,13 @@ if ($hDir = opendir($dirname)) {
     if (is_dir($entry) and $entry[0] != '.') {
       $control = cms_control($entry . "/index.php");
       if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-        print LI(HREF($control[2], $entry, "", false));
+        print LI(HREF($control[2], $entry, NULL, false));
       }
     } else {
       if (is_file($entry)) {# and strncmp(strrev($entry) == 0) {
         $control = cms_control($entry);
-#print LI($control[0] . $entry . $control[1] . $control[2]);
         if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-          print LI(HREF($control[2], $entry, "", false, strcmp($entry, $scriptname) == 0));
+          print LI(HREF($control[2], $entry, NULL, false, strcmp($entry, $scriptname) == 0));
         }
       }
     }
@@ -201,34 +234,69 @@ if ($hDir = opendir($dirname)) {
 }
 
 print UL(0);
-print DIV(0);
+print DIV();
 
 print BR();
-
-print DIV($indhold, "content");
-
-print HR();
 ?>
 
-<DIV ID="footer">
-<P ALIGN=CENTER>
-Copyright: &copy; 2012
-<?php if ($homepage) { ?>
-  <A HREF="#top" TITLE="Weber Design">Weber Design</A>.
-<?php } else { ?>
-  <A HREF="/" TITLE="Weber Design">Weber Design</A>
-<?php } ?>
-</P>
-</DIV>
+<!-- http://galleria.io/ -->
+<div id="galleria">
+<?php
+if ($hDir = opendir($docroot)) {
+  while (($entry = readdir($hDir)) !== false) {
+    if (is_file($docroot . "/" . $entry)) {
+      $parts = explode(".", $entry);
+      if (is_array($parts) && count($parts) > 1) {
+        $ext = strtolower(end($parts));
+        if (strcmp($ext, "jpg") == 0)
+          print IMG("/" . $entry);
+      }
+    }
+  }
+  closedir($hDir);
+}
+if ($hDir = opendir($docroot . "/Images/")) {
+  while (($entry = readdir($hDir)) !== false) {
+    if (is_file($docroot . "/Images/" . $entry)) {
+      $parts = explode(".", $entry);
+      if (is_array($parts) && count($parts) > 1) {
+        $ext = strtolower(end($parts));
+        if (strcmp($ext, "jpg") == 0)
+          print IMG("/Images/" . $entry);
+      }
+    }
+  }
+  closedir($hDir);
+}
+?>
+</div>
+
+<script>
+Galleria.loadTheme('/include/galleria/themes/classic/galleria.classic.min.js');
+Galleria.run('#galleria', {
+  autoplay: 7000 // will move forward every 7 seconds
+});
+//var gallery = Galleria.get(0);
+//gallery.play();
+</script>
 
 <?php
+print DIV("content", $indhold);
+
+print HR();
+
+print DIV("footer", P("Copyright: &copy; 2012 " . HREF("Weber Design", "#top", NULL, false)));
+
 if ($debug)
   phpinfo();
 ?>
-
+<!--
+<script>
+    $("body").text("jQuery works");
+</script>
+-->
 </BODY>
 </HTML>
-
 <?php
 }
 ?>

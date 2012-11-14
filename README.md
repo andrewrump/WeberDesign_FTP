@@ -1,6 +1,6 @@
 Simple Content Management System (CMS).
 
-By Andrew Rump (andrew@rump.dk) Copyright 2013
+By Andrew Rump (andrew@rump.dk) Copyright 2012-2013
 
 This CMS is more a proof on concept than a working system.
 
