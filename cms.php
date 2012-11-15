@@ -8,12 +8,25 @@ $homepage = (strcmp($docroot, $dirname) == 0);
 $debug = $_REQUEST["debug"];
 $hidden = $_REQUEST["hidden"];
 
+#<FORM method="post" action="http://www.dit-domæne.dk/cgi-bin/FormMail.pl">
+#<input type="hidden" name="recipient" value="mail@dit-domæne.dk">
+#<input type="hidden" name="subject" value="Her kan du skrive en emne-tekst">
+#<input type="hidden" name="redirect" value="http://www.dit-domæne.dk/nyside.html">
+
+#Navn:<INPUT TYPE="TEXT" VALUE="" NAME="Navn" SIZE="20">
+#Efternavn:<INPUT TYPE="TEXT" VALUE="" NAME="Efternavn" SIZE="20">
+#Mail:<INPUT TYPE="TEXT" VALUE="" NAME="Mail" SIZE="20">
+#Kommentar:<TEXTAREA name="Kommentar" COLS="40" ROWS="7"> </TEXTAREA>
+
+#<INPUT TYPE="Reset" VALUE="Nulstil"><INPUT TYPE="Submit" VALUE="Send">
+#</form>
+
 #############################################################################################
 
-function DIV($id= NULL, $contentvalue = NULL)
+function DIV($id = NULL, $contentvalue = NULL)
 {
   if (is_null($id) or is_null($contentvalue) or is_numeric($contentvalue))
-    if (!is_null($contentvalue) and $contentvalue)
+    if (!is_null($id))
       return "<DIV ID=\"" . $id. "\">\n";
     else
       return "</DIV>\n";
@@ -78,9 +91,12 @@ function LI($tekst)
   return "<LI>" . $tekst . "</LI>\n";
 }
 
-function IMG($path)
+function IMG($path, $alternate = NULL)
 {
-  return "<IMG SRC=\"" . $path . "\">\n";
+  if (is_null($alternate))
+    return "<IMG SRC=\"" . $path . "\">\n";
+  else
+    return "<IMG SRC=\"" . $path . "\" ALT=\"" . $alternate . "\">\n";
 }
 
 function TABLE($contentvalue)
@@ -114,6 +130,96 @@ function TD($contentvalue)
       return "</TD>\n";
   else
     return "<TD>\n" . $contentvalue . "</TD>\n";
+}
+
+#############################################################################################
+
+function menu_from_path($path)
+{
+}
+
+function menu_from_dir()
+{
+  global $homepage, $dirname;
+
+  $menu = "";
+
+if (!$homepage) {
+  if ($hDir = opendir($dirname . "/..")) {
+    while (($entry = readdir($hDir)) !== false) {
+      $control = cms_control( "../" . $entry);
+      if (is_dir("../" . $entry) and $entry[0] != '.') {
+        if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
+          print LI(HREF($control[2], "../" . $entry, NULL, false));
+        }
+      } else {
+        if (is_file("../" . $entry)) {# and strncmp(strrev($entry) == 0) {
+          if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
+            print LI(HREF($control[2], "../" . $entry, NULL, false));
+          }
+        }
+      }
+    }
+  }
+  closedir($hDir);
+}
+# BUG Only works one level up. Need to be made dynamic
+if ($hDir = opendir($dirname)) {
+  while (($entry = readdir($hDir)) !== false) {
+    if (is_dir($entry) and $entry[0] != '.') {
+      $control = cms_control($entry . "/index.php");
+      if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
+        print LI(HREF($control[2], $entry, NULL, false));
+      }
+    } else {
+      if (is_file($entry)) {# and strncmp(strrev($entry) == 0) {
+        $control = cms_control($entry);
+        if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
+          print LI(HREF($control[2], $entry, NULL, false, strcmp($entry, $scriptname) == 0));
+        }
+      }
+    }
+  }
+  closedir($hDir);
+}
+  return $menu;
+}
+#############################################################################################
+
+function img_from_dir($imagedir = "")
+{
+  $img_src = "";
+  if (strlen($imagedir) == 0)
+    $imagedir = "./";
+  else
+    if (strcmp(substr($imagedir, -1), '/') != 0)
+      $imagedir .= '/';
+  if (file_exists($imagedir) and $hDir = opendir($imagedir)) {
+    if (file_exists($imagedir . 'images.alt'))
+      if ($img_alt_file = fopen($imagedir . 'images.alt', 'r')) {
+        while ($array = fgetcsv($img_alt_file))
+          $img_alt[$array[0]] = $array[1];
+        fclose($img_alt_file);
+      }
+
+    while (($entry = readdir($hDir)) !== false) {
+      if (is_file($imagedir . $entry)) {
+        $parts = explode(".", $entry);
+        if (is_array($parts) && count($parts) > 1) {
+          $ext = strtolower(end($parts));
+          if (strcmp($ext, "jpg") == 0 or strcmp($ext, "jpeg") == 0 or
+              strcmp($ext, "gif") == 0 or strcmp($ext, "png") == 0) {
+            if (isset($img_alt[$entry]))
+              $img_src = $img_src . IMG($imagedir . $entry, htmlspecialchars($img_alt[$entry]));
+            else
+              $img_src = $img_src . IMG($imagedir . $entry, $entry);
+          }
+        }
+      }
+    }
+    closedir($hDir);
+  }
+  return $img_src;
 }
 
 #############################################################################################
@@ -169,12 +275,9 @@ H6 { font-style: italic; }
 P { font-style: italic; font-size: 15}
 LI { font-style: italic; }
 /*P {margin-left:20px;}*/
-/*body {background-image:url("images/back40.gif");}*/
-body {
-color:white;
-background-color:black;
-}
-#galleria{ width: 700px; height: 400px; background: #000 }
+/*body { background-image:url("images/back40.gif"); }*/
+body { color:white; background-color:black; }
+#galleria { width: 700px; height: 400px; background: #000; }
 </STYLE>
 
 <META HTTP-EQUIV="Window-target" CONTENT="_top"> 
@@ -191,85 +294,13 @@ if(top != self)
 </HEAD>
 <BODY>
 <?php
-print DIV("header", 1);
-print UL(1);
+print DIV("header", UL(menu_from_dir()));
 
-if (!$homepage) {
-  if ($hDir = opendir($dirname . "/..")) {
-    while (($entry = readdir($hDir)) !== false) {
-      $control = cms_control( "../" . $entry);
-      if (is_dir("../" . $entry) and $entry[0] != '.') {
-        if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-          print LI(HREF($control[2], "../" . $entry, NULL, false));
-        }
-      } else {
-        if (is_file("../" . $entry)) {# and strncmp(strrev($entry) == 0) {
-          if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-            print LI(HREF($control[2], "../" . $entry, NULL, false));
-          }
-        }
-      }
-    }
-  }
-  closedir($hDir);
-}
-# BUG Only works one level up. Need to be made dynamic
-if ($hDir = opendir($dirname)) {
-  while (($entry = readdir($hDir)) !== false) {
-    if (is_dir($entry) and $entry[0] != '.') {
-      $control = cms_control($entry . "/index.php");
-      if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-        print LI(HREF($control[2], $entry, NULL, false));
-      }
-    } else {
-      if (is_file($entry)) {# and strncmp(strrev($entry) == 0) {
-        $control = cms_control($entry);
-        if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-          print LI(HREF($control[2], $entry, NULL, false, strcmp($entry, $scriptname) == 0));
-        }
-      }
-    }
-  }
-  closedir($hDir);
-}
+$img_src = img_from_dir() . img_from_dir("images");
 
-print UL(0);
-print DIV();
-
-print BR();
+if (strcmp($img_src, "") != 0) {
+  print DIV("galleria", $img_src);
 ?>
-
-<!-- http://galleria.io/ -->
-<div id="galleria">
-<?php
-if ($hDir = opendir($docroot)) {
-  while (($entry = readdir($hDir)) !== false) {
-    if (is_file($docroot . "/" . $entry)) {
-      $parts = explode(".", $entry);
-      if (is_array($parts) && count($parts) > 1) {
-        $ext = strtolower(end($parts));
-        if (strcmp($ext, "jpg") == 0)
-          print IMG("/" . $entry);
-      }
-    }
-  }
-  closedir($hDir);
-}
-if ($hDir = opendir($docroot . "/Images/")) {
-  while (($entry = readdir($hDir)) !== false) {
-    if (is_file($docroot . "/Images/" . $entry)) {
-      $parts = explode(".", $entry);
-      if (is_array($parts) && count($parts) > 1) {
-        $ext = strtolower(end($parts));
-        if (strcmp($ext, "jpg") == 0)
-          print IMG("/Images/" . $entry);
-      }
-    }
-  }
-  closedir($hDir);
-}
-?>
-</div>
 
 <script>
 Galleria.loadTheme('/include/galleria/themes/classic/galleria.classic.min.js');
@@ -281,6 +312,8 @@ Galleria.run('#galleria', {
 </script>
 
 <?php
+}
+
 print DIV("content", $indhold);
 
 print HR();
