@@ -134,6 +134,25 @@ function TD($contentvalue)
 
 #############################################################################################
 
+function cms_control($scriptfilename)
+{
+  #define(TITLE, "<?php #");
+  $header = array(-1, "X", htmlspecialchars("(Undefined)"));
+
+  if (is_file($scriptfilename)) {
+    $handle = fopen($scriptfilename, "r");
+    $control = fgets($handle);
+    fclose($handle);
+    if (ereg("<\?php +# +([0-9]+)([\*\+\-\?\!])(.*)", $control, $regs)) {
+      $header = array($regs[1], $regs[2], htmlspecialchars($regs[3]));
+    }
+  }
+
+  return $header;
+}
+
+#############################################################################################
+
 function menu_from_path($path)
 {
 }
@@ -150,12 +169,12 @@ if (!$homepage) {
       $control = cms_control( "../" . $entry);
       if (is_dir("../" . $entry) and $entry[0] != '.') {
         if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-          print LI(HREF($control[2], "../" . $entry, NULL, false));
+          $menu .= LI(HREF($control[2], "../" . $entry, NULL, false));
         }
       } else {
         if (is_file("../" . $entry)) {# and strncmp(strrev($entry) == 0) {
           if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-            print LI(HREF($control[2], "../" . $entry, NULL, false));
+            $menu .= LI(HREF($control[2], "../" . $entry, NULL, false));
           }
         }
       }
@@ -169,13 +188,13 @@ if ($hDir = opendir($dirname)) {
     if (is_dir($entry) and $entry[0] != '.') {
       $control = cms_control($entry . "/index.php");
       if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-        print LI(HREF($control[2], $entry, NULL, false));
+        $menu .= LI(HREF($control[2], $entry, NULL, false));
       }
     } else {
       if (is_file($entry)) {# and strncmp(strrev($entry) == 0) {
         $control = cms_control($entry);
         if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
-          print LI(HREF($control[2], $entry, NULL, false, strcmp($entry, $scriptname) == 0));
+          $menu .= LI(HREF($control[2], $entry, NULL, false, strcmp($entry, $scriptname) == 0));
         }
       }
     }
@@ -210,9 +229,9 @@ function img_from_dir($imagedir = "")
           if (strcmp($ext, "jpg") == 0 or strcmp($ext, "jpeg") == 0 or
               strcmp($ext, "gif") == 0 or strcmp($ext, "png") == 0) {
             if (isset($img_alt[$entry]))
-              $img_src = $img_src . IMG($imagedir . $entry, htmlspecialchars($img_alt[$entry]));
+              $img_src .= IMG($imagedir . $entry, htmlspecialchars($img_alt[$entry]));
             else
-              $img_src = $img_src . IMG($imagedir . $entry, $entry);
+              $img_src .= IMG($imagedir . $entry, $entry);
           }
         }
       }
@@ -224,26 +243,9 @@ function img_from_dir($imagedir = "")
 
 #############################################################################################
 
-function cms_control($scriptfilename)
-{
-  #define(TITLE, "<?php #");
-  $header = array(-1, "X", htmlspecialchars("(Undefined)"));
+define(NO_GALLERY, 1);
 
-  if (is_file($scriptfilename)) {
-    $handle = fopen($scriptfilename, "r");
-    $control = fgets($handle);
-    fclose($handle);
-    if (ereg("<\?php +# +([0-9]+)([\*\+\-\?\!])(.*)", $control, $regs)) {
-      $header = array($regs[1], $regs[2], htmlspecialchars($regs[3]));
-    }
-  }
-
-  return $header;
-}
-
-#############################################################################################
-
-function cms($indhold)
+function cms($content, $indhold)
 {
   global $scriptname, $scriptfilename, $docroot, $dirname, $homepage, $debug, $hidden;
 
@@ -278,6 +280,7 @@ LI { font-style: italic; }
 /*body { background-image:url("images/back40.gif"); }*/
 body { color:white; background-color:black; }
 #galleria { width: 700px; height: 400px; background: #000; }
+#footer { width: 700px; margin-left: auto; margin-right: auto; }
 </STYLE>
 
 <META HTTP-EQUIV="Window-target" CONTENT="_top"> 
@@ -298,8 +301,9 @@ print DIV("header", UL(menu_from_dir()));
 
 $img_src = img_from_dir() . img_from_dir("images");
 
-if (strcmp($img_src, "") != 0) {
-  print DIV("galleria", $img_src);
+if (!($content & NO_GALLERY)) {
+  if (strcmp($img_src, "") != 0) {
+    print DIV("galleria", $img_src);
 ?>
 
 <script>
@@ -312,6 +316,7 @@ Galleria.run('#galleria', {
 </script>
 
 <?php
+  }
 }
 
 print DIV("content", $indhold);
