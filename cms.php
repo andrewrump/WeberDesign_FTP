@@ -1,12 +1,32 @@
 <?php
-
-$scriptname = $_SERVER["SCRIPT_NAME"];
-$scriptfilename = $_SERVER["SCRIPT_FILENAME"];
-$dirname = dirname($scriptfilename);
-$docroot = $_SERVER["DOCUMENT_ROOT"];
-$homepage = (strcmp($docroot, $dirname) == 0);
-$debug = $_REQUEST["debug"];
-$hidden = $_REQUEST["hidden"];
+#
+# cms??? Copyright 2012: Andrew Rump (andrew-nospam@rump.dk)
+#
+# History
+# 0.1 12-11-12 Created
+# 0.2 13-11-12 Implemented access control ground work
+# 0.3 14-11-12
+# 0.4 15-11-12
+# Now 16-11-12 Centered Gallery and footer and fiexed menu code
+#
+# Include this file an you have a simple but full blown website with:
+# * Automagic menu
+# * Automagic user control
+# * Automagic gallery
+# * CSS support
+# * Easy HTML code generation
+#
+# BUGS:
+# 12-11-12 Menu code not working
+# TODO:
+# 15-11-12 Put some code above gallery, e.g., header
+# 13-11-12 Implement access control
+# 15-11-12 Use htmlspecialchars() in HREF() and escape possible
+# 15-11-12 Cleanup $dirname usage
+# DONE:
+# 13-11-12 Remove newline from title from control file
+# 12-11-12 Center footer and gallery
+#
 
 #<FORM method="post" action="http://www.dit-domæne.dk/cgi-bin/FormMail.pl">
 #<input type="hidden" name="recipient" value="mail@dit-domæne.dk">
@@ -22,16 +42,32 @@ $hidden = $_REQUEST["hidden"];
 #</form>
 
 #############################################################################################
+#
+# HTML helper functions
 
-function DIV($id = NULL, $contentvalue = NULL)
+function expand($HTML, $contentvalue = NULL, $newline = true)
+{
+  if (is_null($contentvalue) or is_numeric($contentvalue))
+    if (!is_null($contentvalue) and $contentvalue)
+      return "<" . $HTML . ">" . ($newline ? "\n" : "");
+    else
+      return "</" . $HTML . ">" . ($newline ? "\n" : "");
+  else
+    return "<" . $HTML . ">" . ($newline ? "\n" : "") . $contentvalue .
+           "</" . $HTML . ">" . ($newline ? "\n" : "");
+}
+
+#############################################################################################
+
+function DIV($id = NULL, $contentvalue = NULL, $newline = true)
 {
   if (is_null($id) or is_null($contentvalue) or is_numeric($contentvalue))
     if (!is_null($id))
-      return "<DIV ID=\"" . $id. "\">\n";
+      return "<DIV ID=\"" . $id. "\">" . ($newline ? "\n" : "");
     else
-      return "</DIV>\n";
+      return "</DIV>" . ($newline ? "\n" : "");
   else
-    return "<DIV ID=\"" . $id. "\">\n" . $contentvalue . "</DIV>\n";
+    return "<DIV ID=\"" . $id. "\">\n" . $contentvalue . "</DIV>" . ($newline ? "\n" : "");
 }
 
 function H($level, $header)
@@ -63,110 +99,193 @@ function HREF($text, $link, $target = NULL, $newline = true, $active = true)
 {
   if ($active)
     if (!is_null($target) and strlen($target) > 0)
-      return "<A HREF=\"" . $link . "\" TARGET=\"" . $target . "\">" . $text . "</A>" .
-             ($newline ? "\n" : "");
+      return "<A HREF=\"" . $link . "\" TARGET=\"" . $target . "\">" . 
+             $text . "</A>" . ($newline ? "\n" : "");
     else
       if (strncmp($link, "http", 4) == 0 or strlen($_SERVER["QUERY_STRING"]) == 0)
-        return "<A HREF=\"" . $link . "\">" . $text . "</A>" . ($newline ? "\n" : "");
-      else
-        return "<A HREF=\"" . $link . "?" . $_SERVER["QUERY_STRING"] . "\">" . $text . "</A>" .
+        return "<A HREF=\"" . $link . "\">" . $text . "</A>" .
                ($newline ? "\n" : "");
+      else
+        return "<A HREF=\"" . $link . "?" . $_SERVER["QUERY_STRING"] . "\">" .
+                $text . "</A>" . ($newline ? "\n" : "");
   else
     return $text . ($newline ? "\n" : "");
 }
 
-function UL($contentvalue)
+function UL($contentvalue = NULL)
 {
-  if (is_numeric($contentvalue))
-    if ($contentvalue)
-      return "<UL>\n";
+  return expand("UL", $contentvalue);
+}
+
+function LI($contentvalue = NULL, $id = NULL, $class = NULL)
+{
+  $LI = "<LI". ($id ? " ID=\"" . $id . "\"" : "") .
+        ($class ? " CLASS=\"" . $class . "\"" : "") . '>';
+  if (is_null($contentvalue) or is_numeric($contentvalue))
+    if (!is_null($contentvalue) and $contentvalue)
+      return $LI . "\n";
     else
-      return "</UL>\n";
+      return "</LI>\n";
   else
-    return "<UL>\n" . $contentvalue . "</UL>\n";
+    return $LI . $contentvalue . "</LI>\n";
 }
 
-function LI($tekst)
-{
-  return "<LI>" . $tekst . "</LI>\n";
-}
-
-function IMG($path, $alternate = NULL)
+function IMG($path, $alternate = NULL, $newline = true)
 {
   if (is_null($alternate))
-    return "<IMG SRC=\"" . $path . "\">\n";
+    return "<IMG SRC=\"" . $path . "\">" . ($newline ? "\n" : "");
   else
-    return "<IMG SRC=\"" . $path . "\" ALT=\"" . $alternate . "\">\n";
+    return "<IMG SRC=\"" . $path . "\" ALT=\"" . htmlspecialchars($alternate) . "\">" .
+           ($newline ? "\n" : "");
+}
+
+function SPAN($contentvalue, $newline = true)
+{
+  return expand("SPAN", $contentvalue, $newline);
 }
 
 function TABLE($contentvalue)
 {
-  if (is_numeric($contentvalue))
-    if ($contentvalue)
-      return "<TABLE>\n";
-    else
-      return "</TABLE>\n";
-  else
-    return "<TABLE>\n" . $contentvalue . "</TABLE>\n";
+  return expand("TABLE", $contentvalue);
 }
 
 function TR($contentvalue)
 {
-  if (is_numeric($contentvalue))
-    if ($contentvalue)
-      return "<TR>\n";
-    else
-      return "</TR>\n";
-  else
-    return "<TR>\n" . $contentvalue . "</TR>\n";
+  return expand("TR", $contentvalue);
 }
 
-function TD($contentvalue)
+function TH($contentvalue, $return = true)
 {
-  if (is_numeric($contentvalue))
-    if ($contentvalue)
-      return "<TD>\n";
-    else
-      return "</TD>\n";
-  else
-    return "<TD>\n" . $contentvalue . "</TD>\n";
+  return expand("TH", $contentvalue, $newline);
+}
+
+function TD($contentvalue, $return = true)
+{
+  return expand("TD", $contentvalue, $newline);
 }
 
 #############################################################################################
 
-function cms_control($scriptfilename)
+function cms_control($scriptfilename, $hidden)
 {
   #define(TITLE, "<?php #");
   $header = array(-1, "X", htmlspecialchars("(Undefined)"));
 
-  if (is_file($scriptfilename)) {
-    $handle = fopen($scriptfilename, "r");
-    $control = fgets($handle);
-    fclose($handle);
-    if (ereg("<\?php +# +([0-9]+)([\*\+\-\?\!])(.*)", $control, $regs)) {
-      $header = array($regs[1], $regs[2], htmlspecialchars($regs[3]));
+  $parts = explode(".", $scriptfilename);
+  if (is_array($parts) && count($parts) > 1) {
+    $ext = strtolower(end($parts));
+    if (strcmp($ext, "php") == 0) {
+      if (is_file($scriptfilename)) {
+        $handle = fopen($scriptfilename, "r");
+        $control = fgets($handle);
+        fclose($handle);
+        if (ereg("<\?php +# +([0-9]+)([\*\+\-\?\!])(.*)", $control, $regs)) {
+          if (strcmp($regs[2], "*") == 0 or $hidden and strcmp($regs[2], "-") == 0 ) {
+            $header = array($regs[1], $regs[2], htmlspecialchars(rtrim($regs[3])));
+          }
+        }
+      }
     }
   }
-
   return $header;
 }
 
 #############################################################################################
+#
+# http://cssmenumaker.com
+#
 
-function menu_from_path($path)
+function menu_from_path($filepath, $hidden)
 {
+  $path = dirname($filepath);
+  $file = basename($filepath);
+
+  if ($hDir = opendir($path)) {
+    while (($entry = readdir($hDir)) !== false) {
+      if (is_file($entry)) {
+# BUG Check index.php, rest should be belov index.php
+        $control = cms_control($entry, $hidden);
+        if ($control[0] >= 0) {
+          $structure[$control[0]] = LI(HREF(SPAN($control[2], false), $entry, NULL, false), NULL,
+                                       (strcmp($file, $entry) == 0 ? 'active' : ''));
+        }
+      } else {
+        $control = cms_control($entry . '/index.php', $hidden);
+        if ($control[0] >= 0) {
+          $structure[$control[0]] = LI(HREF(SPAN($control[2], false), $entry, NULL, false), NULL,
+                                       (strcmp($file, $entry) == 0 ? 'active' : ''));
+        }
+      }
+    }
+    closedir($hDir);
+  }
+
+  ksort($structure);
+  #print_r($structure);
+
+  $menu = "";
+  foreach ($structure as $key => $item)
+    $menu .= $item;
+    
+  return $menu;
 }
 
-function menu_from_dir()
+function menu_from_pathXXX($filepath, $hidden)
 {
-  global $homepage, $dirname;
+  $path = dirname($filepath);
+  $file = basename($filepath);
+  $menu = "";
+  $menu .= LI(HREF(SPAN('AAAA', false), 'AAAA', NULL, false));
+  $menu .= LI(1, NULL, 'active has-sub', false);
+  $menu .= HREF(SPAN('BBBB', false), 'BBBB');
+  $menu .= UL(1);
+  if ($hDir = opendir($path)) {
+    while (($entry = readdir($hDir)) !== false) {
+      if (is_file($entry)) {
+        $control = cms_control($entry, $hidden);
+        if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
+          $menu .= LI(HREF(SPAN($control[2], false), $entry, NULL, false), NULL,
+                      (strcmp($file, $entry) == 0 ? 'active' : ''));
+        }
+      }
+    }
+    closedir($hDir);
+  }
+  $menu .= UL();
+  $menu .= LI();
+  $menu .= LI(HREF(SPAN('CCCC', false), 'CCCC', NULL, false));
+  return $menu;
+}
 
+#<div id='cssmenu'>
+#<ul>
+#   <li class='active '><a href='index.html'><span>Home</span></a></li>
+#   <li class='has-sub '><a href='#'><span>Products</span></a>
+#      <ul>
+#         <li><a href='#'><span>Product 1</span></a></li>
+#         <li><a href='#'><span>Product 2</span></a></li>
+#      </ul>
+#   </li>
+#   <li><a href='#'><span>About</span></a></li>
+#   <li><a href='#'><span>Contact</span></a></li>
+#</ul>
+#</div>
+
+function menu_from_dir($docroot, $scriptname, $hidden)
+{
+  #print_r(cms_control($docroot . $scriptname));
+  
+  return menu_from_path($docroot . $scriptname, $hidden);
+}
+
+function menu_from_XXX($homepage, $dirname, $hidden)
+{
   $menu = "";
 
 if (!$homepage) {
   if ($hDir = opendir($dirname . "/..")) {
     while (($entry = readdir($hDir)) !== false) {
-      $control = cms_control( "../" . $entry);
+      $control = cms_control( "../" . $entry, $hidden);
       if (is_dir("../" . $entry) and $entry[0] != '.') {
         if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
           $menu .= LI(HREF($control[2], "../" . $entry, NULL, false));
@@ -186,13 +305,13 @@ if (!$homepage) {
 if ($hDir = opendir($dirname)) {
   while (($entry = readdir($hDir)) !== false) {
     if (is_dir($entry) and $entry[0] != '.') {
-      $control = cms_control($entry . "/index.php");
+      $control = cms_control($entry . "/index.php", $hidden);
       if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
         $menu .= LI(HREF($control[2], $entry, NULL, false));
       }
     } else {
       if (is_file($entry)) {# and strncmp(strrev($entry) == 0) {
-        $control = cms_control($entry);
+        $control = cms_control($entry, $hidden);
         if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
           $menu .= LI(HREF($control[2], $entry, NULL, false, strcmp($entry, $scriptname) == 0));
         }
@@ -204,6 +323,9 @@ if ($hDir = opendir($dirname)) {
   return $menu;
 }
 #############################################################################################
+#
+#
+#
 
 function img_from_dir($imagedir = "")
 {
@@ -242,14 +364,32 @@ function img_from_dir($imagedir = "")
 }
 
 #############################################################################################
+#
+#
+#
 
 define(NO_GALLERY, 1);
 
-function cms($content, $indhold)
+function cms($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
 {
-  global $scriptname, $scriptfilename, $docroot, $dirname, $homepage, $debug, $hidden;
+  if (is_null($below)) {
+    $below = $above;
+    $above = NULL;
+  }
 
-  $control = cms_control($scriptfilename);
+  $scriptname = $_SERVER["SCRIPT_NAME"];
+  $scriptfilename = $_SERVER["SCRIPT_FILENAME"];
+  $dirname = dirname($scriptfilename);
+  $docroot = $_SERVER["DOCUMENT_ROOT"];
+
+  if (is_null($css))
+    $css = "/include/birgith.css";
+
+  $homepage = (strcmp($docroot, $dirname) == 0);
+  $debug = $_REQUEST["debug"];
+  $hidden = $_REQUEST["hidden"];
+
+  $control = cms_control($scriptfilename, $hidden);
 ?>
 <!DOCTYPE HTML><!--  PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" -->
 <HTML>
@@ -257,31 +397,16 @@ function cms($content, $indhold)
 
 <TITLE><?=$control[2]; ?></TITLE>
 
-<META content="text/html; charset=windows-1252" http-equiv=Content-Type></HEAD>
+<META CONTENT="TEXT/HTML; CHARSET=WINDOWS-1252" HTTP-EQUIV=CONTENT-TYPE></HEAD>
 <META NAME="Description" CONTENT="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
-<META NAME="Keywords" CONTENT="Birgith Weber Design">
+<META NAME="Keywords" CONTENT="Birgith Nicoline Weber Design">
 
-<META NAME="AUTHOR" CONTENT="Andrew Rump">
-<META NAME="GENERATOR" CONTENT="Automagically generated by Andrew Rump!">
-<META NAME="TIMESTAMP" CONTENT="<?= date("F d, Y H:i:s"); ?>">
-<META NAME="COPYRIGHT" CONTENT="Copyright: © 2012 Andrew Rump">
+<META NAME="Author" CONTENT="Birgith Weber, Nicoline Weber & Andrew Rump">
+<META NAME="Generator" CONTENT="Automagically generated by Andrew Rump!">
+<META NAME="Timestamp" CONTENT="<?= date("F d, Y H:i:s"); ?>">
+<META NAME="Copyright" CONTENT="Copyright©: 2012 Andrew Rump">
 
-<STYLE>
-/*HR {color:sienna;}*/
-H1 { font-style: italic; }
-H2 { font-style: italic; }
-H3 { font-style: italic; }
-H4 { font-style: italic; }
-H5 { font-style: italic; }
-H6 { font-style: italic; }
-P { font-style: italic; font-size: 15}
-LI { font-style: italic; }
-/*P {margin-left:20px;}*/
-/*body { background-image:url("images/back40.gif"); }*/
-body { color:white; background-color:black; }
-#galleria { width: 700px; height: 400px; background: #000; }
-#footer { width: 700px; margin-left: auto; margin-right: auto; }
-</STYLE>
+<LINK REL="Stylesheet" TYPE="TEXT/CSS" HREF="<?= $css; ?>">
 
 <META HTTP-EQUIV="Window-target" CONTENT="_top"> 
 <SCRIPT LANGUAGE="javascript" TYPE="text/javascript">
@@ -297,13 +422,16 @@ if(top != self)
 </HEAD>
 <BODY>
 <?php
-print DIV("header", UL(menu_from_dir()));
+echo DIV("cssmenu", UL(menu_from_dir($docroot, $scriptname, $hidden)));
+echo DIV("cssXmenu", UL(menu_from_XXX($homepage, $dirname, $hidden)));
+
+echo DIV("content", $above);
 
 $img_src = img_from_dir() . img_from_dir("images");
 
 if (!($content & NO_GALLERY)) {
   if (strcmp($img_src, "") != 0) {
-    print DIV("galleria", $img_src);
+    echo DIV("galleria", $img_src);
 ?>
 
 <script>
@@ -319,11 +447,11 @@ Galleria.run('#galleria', {
   }
 }
 
-print DIV("content", $indhold);
+echo DIV("content", $below);
 
-print HR();
+echo HR();
 
-print DIV("footer", P("Copyright: &copy; 2012 " . HREF("Weber Design", "#top", NULL, false)));
+echo DIV("footer", P("Copyright: &copy; 2012 " . HREF("Weber Design", "#top", NULL, false)));
 
 if ($debug)
   phpinfo();
