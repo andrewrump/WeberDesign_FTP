@@ -7,7 +7,8 @@
 # 0.2 13-11-12 Implemented access control ground work
 # 0.3 14-11-12
 # 0.4 15-11-12
-# Now 16-11-12 Centered Gallery and footer and fiexed menu code
+# 0.5 16-11-12 Centered Gallery and footer and fiexed menu code
+# 0.6 17-11-12 Rewrote menu code
 #
 # Include this file an you have a simple but full blown website with:
 # * Automagic menu
@@ -165,22 +166,26 @@ function TD($contentvalue, $return = true)
 }
 
 #############################################################################################
+#
+# Check if the scriptfile is a file having the extension .php. If so get the first line
+# from the file and extract the: order number, access control and header from the file.
+# The access control has the following access lavels: * = everyone, + = 1, - = 2
 
-function cms_control($scriptfilename, $hidden)
+function cms_control($scriptfilename, $access)
 {
   #define(TITLE, "<?php #");
   $header = array(-1, "X", htmlspecialchars("(Undefined)"));
 
-  $parts = explode(".", $scriptfilename);
-  if (is_array($parts) && count($parts) > 1) {
-    $ext = strtolower(end($parts));
-    if (strcmp($ext, "php") == 0) {
-      if (is_file($scriptfilename)) {
+  if (is_file($scriptfilename)) {
+    $parts = explode(".", $scriptfilename);
+    if (is_array($parts) && count($parts) > 1) {
+      $ext = strtolower(end($parts));
+      if (strcmp($ext, "php") == 0) {
         $handle = fopen($scriptfilename, "r");
         $control = fgets($handle);
         fclose($handle);
-        if (ereg("<\?php +# +([0-9]+)([\*\+\-\?\!])(.*)", $control, $regs)) {
-          if (strcmp($regs[2], "*") == 0 or $hidden and strcmp($regs[2], "-") == 0 ) {
+        if (ereg("<\?php +# +([0-9]+)([\*\+-\?\!])(.*)", $control, $regs)) {
+          if ($access >= strpos('*+-', $regs[2])) {
             $header = array($regs[1], $regs[2], htmlspecialchars(rtrim($regs[3])));
           }
         }
@@ -195,42 +200,80 @@ function cms_control($scriptfilename, $hidden)
 # http://cssmenumaker.com
 #
 
-function menu_from_path($filepath, $hidden)
+function menu_from_path($docroot, $filepath, $access)
 {
-  $path = dirname($filepath);
-  $file = basename($filepath);
+  $path = dirname($docroot . $filepath);
+  $script = basename($filepath);
 
   if ($hDir = opendir($path)) {
     while (($entry = readdir($hDir)) !== false) {
-      if (is_file($entry)) {
-# BUG Check index.php, rest should be belov index.php
-        $control = cms_control($entry, $hidden);
+      if (is_dir($entry)) {
+        $control = cms_control($entry . '/index.php', $access);
         if ($control[0] >= 0) {
-          $structure[$control[0]] = LI(HREF(SPAN($control[2], false), $entry, NULL, false), NULL,
-                                       (strcmp($file, $entry) == 0 ? 'active' : ''));
+          $folder[$control[0]] = LI(HREF(SPAN($control[2], false), $entry, NULL, false), NULL,
+                                    (strcmp($script, $entry) == 0 ? 'active' : ''));
         }
       } else {
-        $control = cms_control($entry . '/index.php', $hidden);
-        if ($control[0] >= 0) {
-          $structure[$control[0]] = LI(HREF(SPAN($control[2], false), $entry, NULL, false), NULL,
-                                       (strcmp($file, $entry) == 0 ? 'active' : ''));
+        if (is_file($entry)) {
+          $control = cms_control($entry, $access);
+          if ($control[0] >= 0) {
+            $file[$control[0]] = LI(HREF(SPAN($control[2], false), $entry, NULL, false), NULL,
+                                    (strcmp($script, $entry) == 0 ? 'active' : ''));
+          }
         }
       }
     }
     closedir($hDir);
   }
 
-  ksort($structure);
-  #print_r($structure);
+  $html = '';
 
-  $menu = "";
-  foreach ($structure as $key => $item)
-    $menu .= $item;
+  ksort($folder);
+  ksort($file);
+
+  if (empty($folder))
+    $menu = NULL;
+  else
+    $menu = reset($folder);
+  if (empty($file))
+    $item = NULL;
+  else
+    $item = reset($file);
+
+#print_r($folder);
+#print_r($file);
+  while (!is_null($menu) or !is_null($item)) {
+     if (is_null($menu))
+       $menu_pos = key($file) + 1;
+     else
+       $menu_pos = key($folder);
+     if (is_null($item))
+       $item_pos = key($folder) + 1;
+     else
+       $item_pos = key($file);
+#echo $menu . $menu_pos . "<" . $item_pos . $item;
+
+     if ($menu_pos <= $item_pos) {
+       $html .= $menu;
+       $menu = NULL;
+     } else {
+       $html .= $item;
+       $item = NULL;
+     }
+
+    if (is_null($menu) and !empty($folder))
+      if (($menu = next($folder)) === FALSE)
+        $menu = NULL;
+
+    if (is_null($item) and !empty($file))
+      if (($item = next($file)) === FALSE)
+        $item = NULL;
+  }
     
-  return $menu;
+  return $html;
 }
 
-function menu_from_pathXXX($filepath, $hidden)
+function menu_from_pathXXX($filepath, $access)
 {
   $path = dirname($filepath);
   $file = basename($filepath);
@@ -242,8 +285,8 @@ function menu_from_pathXXX($filepath, $hidden)
   if ($hDir = opendir($path)) {
     while (($entry = readdir($hDir)) !== false) {
       if (is_file($entry)) {
-        $control = cms_control($entry, $hidden);
-        if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
+        $control = cms_control($entry, $access);
+        if (strcmp($control[1], "*") == 0 or $access and strcmp($control[1], "-") == 0 ) {
           $menu .= LI(HREF(SPAN($control[2], false), $entry, NULL, false), NULL,
                       (strcmp($file, $entry) == 0 ? 'active' : ''));
         }
@@ -271,28 +314,28 @@ function menu_from_pathXXX($filepath, $hidden)
 #</ul>
 #</div>
 
-function menu_from_dir($docroot, $scriptname, $hidden)
+function menu_from_dir($docroot, $scriptname, $access)
 {
   #print_r(cms_control($docroot . $scriptname));
   
-  return menu_from_path($docroot . $scriptname, $hidden);
+  return menu_from_path($docroot, $scriptname, $access);
 }
 
-function menu_from_XXX($homepage, $dirname, $hidden)
+function menu_from_XXX($homepage, $dirname, $access)
 {
   $menu = "";
 
 if (!$homepage) {
   if ($hDir = opendir($dirname . "/..")) {
     while (($entry = readdir($hDir)) !== false) {
-      $control = cms_control( "../" . $entry, $hidden);
+      $control = cms_control( "../" . $entry, $access);
       if (is_dir("../" . $entry) and $entry[0] != '.') {
-        if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
+        if (strcmp($control[1], "*") == 0 or $access and strcmp($control[1], "-") == 0 ) {
           $menu .= LI(HREF($control[2], "../" . $entry, NULL, false));
         }
       } else {
         if (is_file("../" . $entry)) {# and strncmp(strrev($entry) == 0) {
-          if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
+          if (strcmp($control[1], "*") == 0 or $access and strcmp($control[1], "-") == 0 ) {
             $menu .= LI(HREF($control[2], "../" . $entry, NULL, false));
           }
         }
@@ -305,14 +348,14 @@ if (!$homepage) {
 if ($hDir = opendir($dirname)) {
   while (($entry = readdir($hDir)) !== false) {
     if (is_dir($entry) and $entry[0] != '.') {
-      $control = cms_control($entry . "/index.php", $hidden);
-      if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
+      $control = cms_control($entry . "/index.php", $access);
+      if (strcmp($control[1], "*") == 0 or $access and strcmp($control[1], "-") == 0 ) {
         $menu .= LI(HREF($control[2], $entry, NULL, false));
       }
     } else {
       if (is_file($entry)) {# and strncmp(strrev($entry) == 0) {
-        $control = cms_control($entry, $hidden);
-        if (strcmp($control[1], "*") == 0 or $hidden and strcmp($control[1], "-") == 0 ) {
+        $control = cms_control($entry, $access);
+        if (strcmp($control[1], "*") == 0 or $access and strcmp($control[1], "-") == 0 ) {
           $menu .= LI(HREF($control[2], $entry, NULL, false, strcmp($entry, $scriptname) == 0));
         }
       }
@@ -384,12 +427,14 @@ function cms($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
 
   if (is_null($css))
     $css = "/include/birgith.css";
+  if (is_null($fakeroot))
+    $fakeroot = $docroot;
 
   $homepage = (strcmp($docroot, $dirname) == 0);
   $debug = $_REQUEST["debug"];
-  $hidden = $_REQUEST["hidden"];
+  $access = $_REQUEST["access"];
 
-  $control = cms_control($scriptfilename, $hidden);
+  $control = cms_control($scriptfilename, $access);
 ?>
 <!DOCTYPE HTML><!--  PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" -->
 <HTML>
@@ -422,10 +467,11 @@ if(top != self)
 </HEAD>
 <BODY>
 <?php
-echo DIV("cssmenu", UL(menu_from_dir($docroot, $scriptname, $hidden)));
-echo DIV("cssXmenu", UL(menu_from_XXX($homepage, $dirname, $hidden)));
+echo DIV("cssmenu", UL(menu_from_dir($docroot, $scriptname, $access)));
+echo DIV("cssXmenu", UL(menu_from_XXX($homepage, $dirname, $access)));
 
-echo DIV("content", $above);
+if (!is_null($above))
+  echo DIV("content", $above);
 
 $img_src = img_from_dir() . img_from_dir("images");
 
@@ -437,7 +483,7 @@ if (!($content & NO_GALLERY)) {
 <script>
 Galleria.loadTheme('/include/galleria/themes/classic/galleria.classic.min.js');
 Galleria.run('#galleria', {
-  autoplay: 7000 // will move forward every 7 seconds
+  autoplay: 7000, // will move forward every 7 seconds
 });
 //var gallery = Galleria.get(0);
 //gallery.play();
