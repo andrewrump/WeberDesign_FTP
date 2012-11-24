@@ -9,7 +9,7 @@
 # 0.4 15-11-12
 # 0.5 16-11-12 Centered Gallery and footer and fiexed menu code
 # 0.6 17-11-12 Rewrote menu code
-# 0.7 19-11-12 Implemented one level menu code
+# 0.7 19-11-12 Implemented one level menu code hack
 #
 # Include this file an you have a simple but full blown website with:
 # * Automagic menu
@@ -20,7 +20,7 @@
 #
 # BUGS:
 # 12-11-12 Menu code not working
-# 18-11-12 404.php not working
+# 19-11-12 Files in the top folder are not made submenu to the top menu?!?
 # TODO:
 # 15-11-12 Use htmlspecialchars() in HREF() and escape possible
 # 15-11-12 Cleanup $dirname usage
@@ -35,6 +35,7 @@
 # 15-11-12 Put some code above gallery, e.g., header
 # 13-11-12 Implement access control
 # 17-11-12 Create random image playlist
+# 18-11-12 404.php not working
 #
 
 #<FORM method="post" action="http://www.dit-domæne.dk/cgi-bin/FormMail.pl">
@@ -345,77 +346,6 @@ function create_menu($docroot, $scriptname, $access)
   return $html;
 }
 
-function menu_from_dir($docroot, $scriptname, $access)
-{
-  if ($hDir = opendir($docroot)) {
-    while (($entry = readdir($hDir)) !== false) {
-      if (is_dir($docroot . '/' . $entry)) {
-        if ($entry[0] != '.') {
-          $control = cms_control($docroot . '/' . $entry . '/' . DEFAULT_PAGE, $access);
-          if ($control[3] >= DEFAULT_LEVEL) 
-            $folder[$control[0]] = LI(HREF(SPAN($control[2], false), '/' . $entry, NULL, false), NULL,
-                                      (strcmp($scriptname, '/' . $entry) == 0 ? 'active' : ''));
-        }
-      } else {
-        if (is_file($docroot . '/' . $entry)) {
-          $control = cms_control($docroot . '/' . $entry, $access);
-          if (strcmp($entry, DEFAULT_PAGE) == 0 or strcmp($entry, DEFAULT_TEST) == 0)
-            $entry = DEFAULT_TEST;
-          if ($control[3] >= DEFAULT_LEVEL)
-            $file[$control[0]] = LI(HREF(SPAN($control[2], false), '/' . $entry, NULL, false), NULL,
-                                    (strcmp($scriptname, '/' . $entry) == 0 ? 'active' : ''));
-        }
-      }
-    }
-    closedir($hDir);
-  }
-
-  $html = '';
-
-  if (!is_null($folder))
-    ksort($folder);
-  if (!is_null($file))
-    ksort($file);
-
-  if (empty($folder))
-    $menu = NULL;
-  else
-    $menu = reset($folder);
-  if (empty($file))
-    $item = NULL;
-  else
-    $item = reset($file);
-
-  while (!is_null($menu) or !is_null($item)) {
-     if (is_null($menu))
-       $menu_pos = key($file) + 1;
-     else
-       $menu_pos = key($folder);
-     if (is_null($item))
-       $item_pos = key($folder) + 1;
-     else
-       $item_pos = key($file);
-
-     if ($menu_pos <= $item_pos) {
-       $html .= $menu;
-       $menu = NULL;
-     } else {
-       $html .= $item;
-       $item = NULL;
-     }
-
-    if (is_null($menu) and !empty($folder))
-      if (($menu = next($folder)) === FALSE)
-        $menu = NULL;
-
-    if (is_null($item) and !empty($file))
-      if (($item = next($file)) === FALSE)
-        $item = NULL;
-  }
-    
-  return $html;
-}
-
 #############################################################################################
 #
 #
@@ -505,7 +435,7 @@ function cms($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
 
 <TITLE><?=$control[2]; ?></TITLE>
 
-<META CONTENT="TEXT/HTML; CHARSET=WINDOWS-1252" HTTP-EQUIV=CONTENT-TYPE></HEAD>
+<META CONTENT="TEXT/HTML; CHARSET=WINDOWS-1252" HTTP-EQUIV=CONTENT-TYPE>
 <META NAME="Description" CONTENT="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
 <META NAME="Keywords" CONTENT="Birgith, Nicoline, Weber, Weber Design, design, smykker, ikoner, billedkunst, decopage, undervisning, cup cake, ...">
 
@@ -531,7 +461,6 @@ if(top != self)
 <BODY>
 <?php
 echo DIV("cssmenu", UL(create_menu($docroot, $scriptname, $access)));
-echo DIV("cssmenu", UL(menu_from_dir($docroot, $scriptname, $access)));
 
 if (!is_null($above))
   echo DIV("content", $above);
