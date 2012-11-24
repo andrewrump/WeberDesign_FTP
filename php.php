@@ -1,6 +1,7 @@
 <?php
 #
-# cms??? Copyright 2012: Andrew Rump (andrew-nospam@rump.dk)
+# PHP - Personal Home Page system
+# Copyright 2012: Andrew Rump (andrew-nospam@rump.dk)
 #
 # History
 # 0.1 12-11-12 Created
@@ -10,6 +11,7 @@
 # 0.5 16-11-12 Centered Gallery and footer and fiexed menu code
 # 0.6 17-11-12 Rewrote menu code
 # 0.7 19-11-12 Implemented one level menu code hack
+# 0.8 21-11-12 Renamed the project to PHP - Personal Home Page system :-D
 #
 # Include this file an you have a simple but full blown website with:
 # * Automagic menu
@@ -29,6 +31,9 @@
 # 17-11-12 Implement Form incl. spam
 # 17-11-12 Implement mail submit incl. spam
 # 17-11-12 Find images recursively
+# 22-11-12 Blog
+# 22-11-12 Mailingliste 
+# 22-11-12 Automagic 404 reporting
 # DONE:
 # 13-11-12 Remove newline from title from control file
 # 12-11-12 Center footer and gallery
@@ -36,6 +41,8 @@
 # 13-11-12 Implement access control
 # 17-11-12 Create random image playlist
 # 18-11-12 404.php not working
+# 24-11-12 Add favicon.ico
+# <link rel="shortcut icon" href="http://yourdomain.com/favicon.ico" type="image/vnd.microsoft.icon">
 #
 
 #<FORM method="post" action="http://www.dit-domæne.dk/cgi-bin/FormMail.pl">
@@ -63,6 +70,19 @@ define(IMG_ALT_FILE, 'images.alt');
 #############################################################################################
 #
 # HTML helper functions
+
+function fixtags($text) {
+  $text = htmlspecialchars($text);
+  $text = preg_replace("/=/", "=\"\"", $text);
+  $text = preg_replace("/&quot;/", "&quot;\"", $text);
+  $tags = "/&lt;(\/|)(\w*)(\ |)(\w*)([\\\=]*)(?|(\")\"&quot;\"|)(?|(.*)?&quot;(\")|)([\ ]?)(\/|)&gt;/i";
+  $replacement = "<$1$2$3$4$5$6$7$8$9$10>";
+  $text = preg_replace($tags, $replacement, $text);
+  $text = preg_replace("/=\"\"/", "=", $text);
+  return $text;
+}
+
+#########################
 
 function expand($HTML, $contentvalue = NULL, $newline = true, $attributes = NULL)
 {
@@ -148,17 +168,17 @@ function UL($contentvalue = NULL)
   return expand("UL", $contentvalue);
 }
 
-function LI($contentvalue = NULL, $id = NULL, $class = NULL)
+function LI($contentvalue = NULL, $id = NULL, $class = NULL, $newline = true)
 {
   $LI = "<LI". ($id ? " ID=\"" . $id . "\"" : "") .
-        ($class ? " CLASS=\"" . $class . "\"" : "") . ">";
+        ($class ? " CLASS=\"" . $class . "\"" : "") . ">" . ($newline ? "\n" : "");
   if (is_null($contentvalue) or is_numeric($contentvalue))
     if (!is_null($contentvalue) and $contentvalue)
-      return $LI . "\n";
+      return $LI;
     else
-      return "</LI>\n";
+      return "</LI>" . ($newline ? "\n" : "");
   else
-    return $LI . $contentvalue . "</LI>\n";
+    return $LI . $contentvalue . "</LI>" . ($newline ? "\n" : "");
 }
 
 function IMG($path, $alternate = NULL, $newline = true)
@@ -199,7 +219,8 @@ function TD($contentvalue, $return = true)
 #
 # Check if the scriptfile is a file having the extension .php. If so get the first line
 # from the file and extract the: order number, access control and header from the file.
-# The access control has the following access lavels: * = everyone, + = 1, - = 2
+# The access control has the following access levels:
+# ! = invisible (e.g., 404), * = everyone, + = 2, - = 3, ...
 
 function cms_control($scriptfilename, $access)
 {
@@ -214,7 +235,7 @@ function cms_control($scriptfilename, $access)
         $handle = fopen($scriptfilename, "r");
         $control = fgets($handle);
         fclose($handle);
-        if (ereg("<\?php +# +([0-9]+)([\!\*\+-\?])(.*)", $control, $regs)) {
+        if (ereg("<\?php +# +([0-9]+)([\!\*\+-])(.*)", $control, $regs)) {
           $level = strpos('!*+-', $regs[2]);
           if ($access >= $level) {
             $header = array($regs[1], $regs[2], htmlspecialchars(rtrim($regs[3])), $level);
@@ -403,12 +424,14 @@ function img_from_dir($options = NULL, $imagedir = "")
 define(NO_GALLERY, 1);
 define(RANDOM_GALLERY, 2 * NO_GALLERY);
 define(RECURSIVE_GALLERY, 2 * RANDOM_GALLERY);
+define(NO_SHARE, 2 * RECURSIVE_GALLERY);
+define(NO_COPYRIGHT, 2 * NO_SHARE);
 
 #
 
-function cms($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
+function php($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
 {
-  #if (is_null($below)) {
+  #if (is_null($below)) { # You may want it above! :-|
   #  $below = $above;
   #  $above = NULL;
   #}
@@ -422,20 +445,27 @@ function cms($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
   if (is_null($fakeroot))
     $fakeroot = $docroot;
 
-  $debug = $_REQUEST["debug"];
-  $access = $_REQUEST["access"];
+  $debug = $_REQUEST["debug"]; # BUG sanitize
+  $access = $_REQUEST["access"]; # BUG sanitize
   if (is_null($access))
-    $access = 1;
+    $access = DEFAULT_LEVEL;
 
   $control = cms_control($scriptfilename, $access);
+  if ($control[0] < 0) { # Deny access to pages not accessable
+    #header("HTTP/1.0 404 Not Found");
+    #header("Status: 404 Not Found");
+    header('Location: /404.php');
+    #require $docroot . "/404.php";
+    exit;
+  }
 ?>
-<!DOCTYPE HTML><!--  PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" -->
+<!DOCTYPE HTML>
 <HTML>
 <HEAD>
 
 <TITLE><?=$control[2]; ?></TITLE>
 
-<META CONTENT="TEXT/HTML; CHARSET=WINDOWS-1252" HTTP-EQUIV=CONTENT-TYPE>
+<META HTTP-EQUIV="content-type" CONTENT="text/html; CHARSET=UTF-8">
 <META NAME="Description" CONTENT="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
 <META NAME="Keywords" CONTENT="Birgith, Nicoline, Weber, Weber Design, design, smykker, ikoner, billedkunst, decopage, undervisning, cup cake, ...">
 
@@ -457,8 +487,23 @@ if(top != self)
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>
 <script src="/include/galleria/galleria-1.2.8.min.js"></script>
 
+<LINK REL="shortcut icon" HREF="/favicon.ico" TYPE="image/x-icon">
+<LINK REL="icon" HREF="http://weberdesign.dk/favicon.ico" TYPE="image/vnd.microsoft.icon">
+
 </HEAD>
 <BODY>
+
+<!-- Facebook Like -->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/da_DK/all.js#xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<!-- Facebook Like -->
+
 <?php
 echo DIV("cssmenu", UL(create_menu($docroot, $scriptname, $access)));
 
@@ -487,7 +532,34 @@ Galleria.run('#galleria', {
 
 echo DIV("content", $below);
 
+if (!($content & NO_SHARE)) {
+  echo DIV("footer");
+?>
+<!-- Google+ Share -->
+<!-- Place this tag where you want the share button to render. -->
+<div class="g-plus" data-action="share"></div>
+
+<!-- Place this tag after the last share tag. -->
+<script type="text/javascript">
+  window.___gcfg = {lang: 'da'};
+
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/plusone.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
+<!-- Google+ Share -->
+<!-- Facebook Like -->
+<div class="fb-like" data-href="http://weberdesign.dk/" data-send="true" data-width="450" data-show-faces="true"></div>
+<!-- Facebook Like -->
+<?php
+  echo DIV();
+}
+
+if (!($content & NO_COPYRIGHT)) {
 echo DIV("footer", P("Copyright: &copy; 2012 " . HREF("Weber Design", "#top", NULL, false)));
+}
 
 if ($debug)
   phpinfo();

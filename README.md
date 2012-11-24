@@ -1,4 +1,4 @@
-Simple Content Management System (CMS).
+Personal Home Page system (PHP) :-D
 
 By Andrew Rump (andrew@rump.dk) Copyright 2012-2013
 
