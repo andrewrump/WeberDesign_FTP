@@ -113,7 +113,7 @@ function expand($HTML, $contentvalue = NULL, $newline = true, $attributes = NULL
 function DIV($id = NULL, $contentvalue = NULL, $newline = true)
 {
   if (is_null($id) or is_null($contentvalue) or is_numeric($contentvalue))
-    if (!is_null($id))
+    if (!is_null($id) and (is_null($contentvalue) or is_numeric($contentvalue) and $contentvalue))
       return "<DIV ID=\"" . $id. "\">" . ($newline ? "\n" : "");
     else
       return "</DIV>" . ($newline ? "\n" : "");
@@ -139,6 +139,11 @@ function B($paragraph, $newline = false)
 function EM($paragraph, $newline = false)
 {
   return "<EM>" . $paragraph . "</EM>" . ($newline ? "\n" : "");
+}
+
+function BLOCKQUOTE($contentvalue = NULL)
+{ # cite="http"
+  return expand("BLOCKQUOTE", $contentvalue);
 }
 
 function HR()
@@ -467,12 +472,12 @@ function php($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
     exit;
   }
 ?>
-<!DOCTYPE HTML><!--  PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" -->
+<!DOCTYPE HTML>
 <!--[if lt IE 7 ]><HTML LANG="DA" class="ie6"><![endif]-->
 <!--[if IE 7 ]><HTML LANG="DA" class="ie7"><![endif]-->
 <!--[if IE 8 ]><HTML LANG="DA" class="ie8"><![endif]-->
 <!--[if IE 9 ]><HTML LANG="DA" class="ie9"><![endif]-->
-<!--[if (gt IE 9)|!(IE)]><!--><HTML LANG="DA"><!--<![endif]-->
+<!--[if (gt IE 9)|!(IE)]><HTML LANG="DA"><![endif]-->
 <HEAD>
 
 <TITLE><?=$control[2]; ?></TITLE>
@@ -508,6 +513,8 @@ if(top != self)
 
 </HEAD>
 <BODY>
+<?=DIV("container", 1); ?>
+<?=DIV("header", 1); ?>
 
 <!-- Facebook Like -->
 <div id="fb-root"></div>
@@ -548,6 +555,8 @@ Galleria.run('#galleria', {
 <?php
   }
 }
+echo DIV("header", 0);
+echo DIV("body", 1);
 
 echo DIV("content", $below);
 
@@ -555,7 +564,9 @@ if (!($content & NO_COPYRIGHT)) {
 echo DIV("footer", P("Copyright: &copy; 2012 " . HREF("Weber Design", "#top", NULL, false)));
 }
 
-if (0 and !($content & NO_SHARE)) {
+echo DIV("body", 0);
+
+if (0 and ($content & NO_SHARE)) {
   echo DIV("footer");
 ?>
 <!-- Google+ Share -->
@@ -577,7 +588,7 @@ if (0 and !($content & NO_SHARE)) {
 <div class="fb-like" data-href="http://weberdesign.dk/" data-send="true" data-width="450" data-show-faces="true"></div>
 <!-- Facebook Like -->
 <?php
-  echo DIV();
+  echo DIV("footer", 0);
 }
 if ($debug)
   phpinfo();
@@ -587,6 +598,7 @@ if ($debug)
     $("body").text("jQuery works");
 </script>
 -->
+<?=DIV("container", 0); ?>
 </BODY>
 </HTML>
 <?php
