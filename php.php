@@ -473,6 +473,9 @@ function php($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
   }
 ?>
 <!DOCTYPE HTML>
+<!--[if lte IE 6]>
+	<style>#top, #bottom, #left, #right { display: none; }</style>
+<![endif]-->
 <!--[if lt IE 7 ]><HTML LANG="DA" class="ie6"><![endif]-->
 <!--[if IE 7 ]><HTML LANG="DA" class="ie7"><![endif]-->
 <!--[if IE 8 ]><HTML LANG="DA" class="ie8"><![endif]-->
@@ -513,6 +516,7 @@ if(top != self)
 
 </HEAD>
 <BODY>
+<SCRIPT TYPE="text/javascript" SRC="/include/snow.js"></SCRIPT>
 <?=DIV("container", 1); ?>
 <?=DIV("header", 1); ?>
 
@@ -599,6 +603,10 @@ if ($debug)
 </script>
 -->
 <?=DIV("container", 0); ?>
+<div id="left"></div>
+<div id="right"></div>
+<div id="top"></div>
+<div id="bottom"></div>
 </BODY>
 </HTML>
 <?php
