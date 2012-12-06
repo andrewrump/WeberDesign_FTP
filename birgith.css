@@ -1,20 +1,122 @@
+/***************************************************************************************************/
 /*HR {color:sienna;}*/
-H1 { font-style: italic; text-align: center; }
-H2 { font-style: italic; }
-H3 { font-style: italic; }
-H4 { font-style: italic; }
-H5 { font-style: italic; }
-H6 { font-style: italic; }
-P { font-style: italic; font-size: 15}
-LI { font-style: italic; }
+/*H1 { font-style: italic; text-align: center; }*/
+H1 { text-align: center; }
+/*H2 { font-style: italic; }*/
+/*H3 { font-style: italic; }*/
+/*H4 { font-style: italic; }*/
+/*H5 { font-style: italic; }*/
+/*H6 { font-style: italic; }*/
+/*P { font-style: italic; font-size: 15}*/
+/*LI { font-style: italic; }*/
 /*P {margin-left:20px;}*/
 /*body { background-image:url("images/back40.gif"); }*/
 body { color:white; background-color:black; }
 
-#footer { margin-left: auto; margin-right: auto; width: 16em; }
+@media only screen and (device-width: 768px) {
+  /* For general iPad layouts */
+}
 
+@media only screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:portrait) {
+  /* For portrait layouts only */
+}
+
+@media only screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:landscape) {
+  /* For landscape layouts only */
+#container {
+width:800px;
+}
+}
+
+@media all {
+    /* styles for narrow desktop browsers and iPad landscape */
+#container {
+width:750px;
+}
+}
+
+@media all and (max-width: 1024px) {
+    /* styles for narrow desktop browsers and iPad landscape */
+}
+
+@media all and (max-width: 768px) {
+    /* styles for narrower desktop browsers and iPad portrait */
+}
+
+@media all and (max-width: 480px) {
+    /* styles for iPhone/Android landscape (and really narrow browser windows) */
+}
+
+@media all and (max-width: 320px) {
+    /* styles for iPhone/Android portrait */
+}
+
+@media all and (max-width: 240px) {
+    /* styles for smaller devices */
+}
+
+/* http://css-tricks.com/body-border/ *************************************************************/
+#top, #bottom, #left, #right {
+   background: #a5ebff;
+   position: fixed;
+}
+#left, #right {
+   top: 0; bottom: 0;
+   width: 10%;
+}
+#left { left: 0; }
+#right { right: 0; }
+#top, #bottom {
+   left: 0; right: 0;
+   height: 0px;
+}
+#top { top: 0; }
+#bottom { bottom: 0; }
+
+@media 
+/* Fairly small screens including iphones */
+only screen and (max-width: 500px),
+/* iPads */
+only screen and (min-device-width: 768px) and (max-device-width: 1024px) 
+{
+	#top, #bottom, #left, #right { display: none; }
+}
+
+/* http://matthewjamestaylor.com/blog/keeping-footers-at-the-bottom-of-the-page ********************/
+html,
+body {
+   margin:0;
+   padding:0;
+   height:100%;
+}
+#container {
+   min-height:100%;
+   position:relative;
+   margin-left: auto; 
+   margin-right: auto; 
+   /*width:800px;*/
+}
+#header {
+   /*background:#ff0;*/
+   padding:10px;
+}
+#body {
+   padding:10px;
+   padding-bottom:60px;   /* Height of the footer */
+}
+#footer {
+   position:absolute;
+   bottom:0;
+   /*width:100%;*/
+   margin-left: auto; margin-right: auto; width: 16em;
+   height:60px;   /* Height of the footer */
+   /*background:#6cf;*/
+}/*#footer { margin-left: auto; margin-right: auto; width: 16em; }*/
+
+/* http://galleria.io/ ***************************************************************************/
 #galleria { margin-left: auto; margin-right: auto; width: 700px; height: 400px; background: #000; }
 
+/* http://cssmenumaker.com/ **********************************************************************/
 #cssmenu{ height:37px; display:block; padding:0; margin: 0;  border:1px solid; border-radius:5px; } 
 #cssmenu > ul {list-style:inside none; padding:0; margin:0;} 
 #cssmenu > ul > li {list-style:inside none; padding:0; margin:0; float:left; display:block; position:relative;} 
