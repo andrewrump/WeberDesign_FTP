@@ -12,6 +12,11 @@
 # 0.6 17-11-12 Rewrote menu code
 # 0.7 19-11-12 Implemented one level menu code hack
 # 0.8 21-11-12 Renamed the project to PHP - Personal Home Page system :-D
+# 0.9 02-12-12
+# 1.0 02-12-12
+# 1.1 04-12-12 Fixed a bug (by removing a comma in a Gallery conf)
+# 1.2 05-12-12 
+# 1.3 05-12-12 Implemented LOCAL_GALLERY
 #
 # Include this file an you have a simple but full blown website with:
 # * Automagic menu
@@ -101,10 +106,10 @@ function expand($HTML, $contentvalue = NULL, $newline = true, $attributes = NULL
       return "</" . $HTML . ">" . ($newline ? "\n" : "");
   else
     if (is_null($attribrutes))
-      return "<" . $HTML . " " . $attributes . ">" . ($newline ? "\n" : "") . $contentvalue .
+      return "<" . $HTML . ">" . ($newline ? "\n" : "") . $contentvalue .
              "</" . $HTML . ">" . ($newline ? "\n" : "");
     else
-      return "<" . $HTML . ">" . ($newline ? "\n" : "") . $contentvalue .
+      return "<" . $HTML . " " . $attributes . ">" . ($newline ? "\n" : "") . $contentvalue .
              "</" . $HTML . ">" . ($newline ? "\n" : "");
 }
 
@@ -114,11 +119,11 @@ function DIV($id = NULL, $contentvalue = NULL, $newline = true)
 {
   if (is_null($id) or is_null($contentvalue) or is_numeric($contentvalue))
     if (!is_null($id) and (is_null($contentvalue) or is_numeric($contentvalue) and $contentvalue))
-      return "<DIV ID=\"" . $id. "\">" . ($newline ? "\n" : "");
+      return "<DIV ID='" . $id. "'>" . ($newline ? "\n" : "");
     else
       return "</DIV>" . ($newline ? "\n" : "");
   else
-    return "<DIV ID=\"" . $id. "\">\n" . $contentvalue . "</DIV>" . ($newline ? "\n" : "");
+    return "<DIV ID='" . $id. "'>\n" . $contentvalue . "</DIV>" . ($newline ? "\n" : "");
 }
 
 function H($level, $header)
@@ -180,8 +185,8 @@ function UL($contentvalue = NULL)
 
 function LI($contentvalue = NULL, $id = NULL, $class = NULL, $newline = true)
 {
-  $LI = "<LI". ($id ? " ID=\"" . $id . "\"" : "") .
-        ($class ? " CLASS=\"" . $class . "\"" : "") . ">" . ($newline ? "\n" : "");
+  $LI = "<LI". ($id ? " ID='" . $id . "'" : "") .
+        ($class ? " CLASS='" . $class . "'" : "") . ">" . ($newline ? "\n" : "");
   if (is_null($contentvalue) or is_numeric($contentvalue))
     if (!is_null($contentvalue) and $contentvalue)
       return $LI;
@@ -194,9 +199,9 @@ function LI($contentvalue = NULL, $id = NULL, $class = NULL, $newline = true)
 function IMG($path, $alternate = NULL, $newline = true)
 {
   if (is_null($alternate))
-    return "<IMG SRC=\"" . $path . "\">" . ($newline ? "\n" : "");
+    return "<IMG SRC='" . $path . "'>" . ($newline ? "\n" : "");
   else
-    return "<IMG SRC=\"" . $path . "\" ALT=\"" . htmlspecialchars($alternate) . "\">" .
+    return "<IMG SRC='" . $path . "' ALT='" . htmlspecialchars($alternate) . "'>" .
            ($newline ? "\n" : "");
 }
 
@@ -346,7 +351,7 @@ function create_menu($docroot, $scriptname, $access)
     else
       $item_pos = key($file);
 
-    $html .= LI(1, NULL, ($menu_pos <= $item_pos and !is_null($menu[1])) ? 'has-sub' : NULL);
+    $html .= LI(1, NULL, ($menu_pos <= $item_pos and !is_null($menu[1])) ? 'has-sub' : NULL, false);
     #strcmp('/' . $entry, $scriptname) == 0 ? 'active' : ''
 
     if ($menu_pos <= $item_pos) {
@@ -431,11 +436,14 @@ function img_from_dir($options = NULL, $imagedir = "")
 #
 #
 
+define(NO_OPTIONS, 0);
 define(NO_GALLERY, 1);
-define(RANDOM_PICTURE, 2 * NO_GALLERY);
-define(RANDOM_GALLERY, 2 * RANDOM_PICTURE);
-define(RECURSIVE_GALLERY, 2 * RANDOM_GALLERY);
-define(NO_SHARE, 2 * RECURSIVE_GALLERY);
+define(LOCAL_GALLERY, 2 * NO_GALLERY);
+define(RANDOM_GALLERY, 2 * LOCAL_GALLERY);
+define(RANDOM_PICTURE, 2 * RANDOM_GALLERY);
+define(RECURSIVE_GALLERY, 2 * RANDOM_PICTURE);
+define(BOTTOM_GALLERY, 2 * RECURSIVE_GALLERY);
+define(NO_SHARE, 2 * BOTTOM_GALLERY);
 define(NO_COPYRIGHT, 2 * NO_SHARE);
 
 define(DEFAULT_CSS, "/include/birgith.css");
@@ -516,7 +524,6 @@ if(top != self)
 
 </HEAD>
 <BODY>
-<SCRIPT TYPE="text/javascript" SRC="/include/snow.js"></SCRIPT>
 <?=DIV("container", 1); ?>
 <?=DIV("header", 1); ?>
 
@@ -540,7 +547,10 @@ if (!is_null($above))
 if ($content & RANDOM_PICTURE)
   $img_src = ""; # TODO
 else
-  $img_src = img_from_dir($content) . img_from_dir($content, "images");
+  if ($content & LOCAL_GALLERY)
+    $img_src = img_from_dir($content, "images_" . basename($scriptname, '.php'));
+  else
+    $img_src = img_from_dir($content) . img_from_dir($content, "images");
 
 if (!($content & NO_GALLERY)) {
   if (strcmp($img_src, "") != 0) {
@@ -607,6 +617,7 @@ if ($debug)
 <div id="right"></div>
 <div id="top"></div>
 <div id="bottom"></div>
+<SCRIPT TYPE="text/javascript" SRC="/include/snow.js"></SCRIPT>
 </BODY>
 </HTML>
 <?php
