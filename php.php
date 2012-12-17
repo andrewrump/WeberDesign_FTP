@@ -29,6 +29,7 @@
 # 12-11-12 *Menu code not working
 # 19-11-12 +Files in the top folder are not made submenu to the top menu?!?
 # 24-11-12 +Using the wrong charset in <HEAD>
+# 14-12-12 RANDOM_GALLERY only randomize each directory and not all images
 # TODO:
 # 15-11-12 +Use htmlspecialchars() in HREF() and escape possible
 # 15-11-12 +Cleanup $dirname usage
@@ -68,14 +69,18 @@
 #<INPUT TYPE="Reset" VALUE="Nulstil"><INPUT TYPE="Submit" VALUE="Send">
 #</form>
 
+$error_level = $_REQUEST["error_level"]; # BUG sanitize
+
+#error_reporting(~0); # -1
+
 #############################################################################################
 #
 # Default values
 
-define(DEFAULT_LEVEL, 1);
-define(DEFAULT_PAGE, 'index.php');
-define(DEFAULT_TEST, 'index1.php');
-define(IMG_ALT_FILE, 'images.alt');
+define('DEFAULT_LEVEL', 1);
+define('DEFAULT_PAGE', 'index.php');
+define('DEFAULT_TEST', 'index1.php');
+define('IMG_ALT_FILE', 'images.alt');
 
 #############################################################################################
 #
@@ -98,14 +103,14 @@ function expand($HTML, $contentvalue = NULL, $newline = true, $attributes = NULL
 {
   if (is_null($contentvalue) or is_numeric($contentvalue))
     if (!is_null($contentvalue) and $contentvalue)
-      if (is_null($attribrutes))
+      if (is_null($attributes))
         return "<" . $HTML . ">" . ($newline ? "\n" : "");
       else
         return "<" . $HTML . " " . $attributes . ">" . ($newline ? "\n" : "");
     else
       return "</" . $HTML . ">" . ($newline ? "\n" : "");
   else
-    if (is_null($attribrutes))
+    if (is_null($attributes))
       return "<" . $HTML . ">" . ($newline ? "\n" : "") . $contentvalue .
              "</" . $HTML . ">" . ($newline ? "\n" : "");
     else
@@ -240,7 +245,7 @@ function TD($contentvalue, $return = true)
 function cms_control($scriptfilename, $access)
 {
   #define(TITLE, "<?php #");
-  $header = array(-1, "X", htmlspecialchars("(Undefined)"));
+  $header = array(-1, "X", htmlspecialchars("(Undefined)"), -1);
 
   if (is_file($scriptfilename)) {
     $parts = explode(".", $scriptfilename);
@@ -421,7 +426,7 @@ function img_from_dir($options = NULL, $imagedir = "")
   }
 
   $img_src = "";
-  if (!is_null($images)) {
+  if (isset($images) and !is_null($images)) {
     if ($options & RANDOM_GALLERY)
       shuffle($images);
     foreach ($images as $image)
@@ -436,17 +441,59 @@ function img_from_dir($options = NULL, $imagedir = "")
 #
 #
 
-define(NO_OPTIONS, 0);
-define(NO_GALLERY, 1);
-define(LOCAL_GALLERY, 2 * NO_GALLERY);
-define(RANDOM_GALLERY, 2 * LOCAL_GALLERY);
-define(RANDOM_PICTURE, 2 * RANDOM_GALLERY);
-define(RECURSIVE_GALLERY, 2 * RANDOM_PICTURE);
-define(BOTTOM_GALLERY, 2 * RECURSIVE_GALLERY);
-define(NO_SHARE, 2 * BOTTOM_GALLERY);
-define(NO_COPYRIGHT, 2 * NO_SHARE);
+function gallery($content, $scriptname)
+{
+  if (!($content & NO_GALLERY)) {
+    $path_parts = pathinfo($scriptname);
+    if ($content & RANDOM_PICTURE)
+      $img_src = ""; # TODO
+    else
+      if ($content & LOCAL_GALLERY)
+      {
+        $img_src = img_from_dir($content, 'images_' . $path_parts['filename'] . '/');
+      }
+      else
+      {
+        $img_src = img_from_dir($content);
+        $img_src .= img_from_dir($content, 'images/');
+        if ($content & RECURSIVE_GALLERY) {
+          # TODO
+        }
+      }
 
-define(DEFAULT_CSS, "/include/birgith.css");
+    if (strcmp($img_src, "") != 0) {
+      echo DIV("galleria", $img_src);
+?>
+<script>
+Galleria.loadTheme('/include/galleria/themes/classic/galleria.classic.min.js');
+Galleria.run('#galleria', {
+  autoplay: 7000 // will move forward every 7 seconds
+});
+//var gallery = Galleria.get(0);
+//gallery.play();
+</script>
+
+<?php
+    }
+  }
+}
+
+#############################################################################################
+#
+#
+#
+
+define('NO_OPTIONS', 0);
+define('NO_GALLERY', 1);
+define('LOCAL_GALLERY', 2 * NO_GALLERY);
+define('RANDOM_GALLERY', 2 * LOCAL_GALLERY);
+define('RANDOM_PICTURE', 2 * RANDOM_GALLERY);
+define('RECURSIVE_GALLERY', 2 * RANDOM_PICTURE);
+define('BOTTOM_GALLERY', 2 * RECURSIVE_GALLERY);
+define('NO_SHARE', 2 * BOTTOM_GALLERY);
+define('NO_COPYRIGHT', 2 * NO_SHARE);
+
+define('DEFAULT_CSS', "/include/birgith.css");
 
 #
 
@@ -497,8 +544,8 @@ function php($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
 <!--<META CONTENT="TEXT/HTML; CHARSET=WINDOWS-1252" HTTP-EQUIV=CONTENT-TYPE>-->
 <!--<META HTTP-EQUIV="content-type" CONTENT="text/html; CHARSET=UTF-8">-->
 
-<META NAME="Description" CONTENT="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
-<META NAME="Keywords" CONTENT="Birgith, Nicoline, Weber, Weber Design, design, smykker, ikoner, billedkunst, decoupage, undervisning, cup cake, ...">
+<META NAME="Description" CONTENT="Weber Design, en verden af kreativitet. Smykker, billedkunst, kreativt værksted, ... - rum for fordybelse">
+<META NAME="Keywords" CONTENT="Birgith, Nicoline, Weber, Weber Design, design, smykker, smykkefremstilling, workshops, kreativitet, undervisning, kurser, indretning, engle, ikoner, billedkunst, decoupage, cup cake, blomsterbinding, blomsterkunst, ...">
 
 <META NAME="Author" CONTENT="Birgith Weber, Nicoline Weber & Andrew Rump">
 <META NAME="Generator" CONTENT="Automagically generated by Andrew Rump!">
@@ -544,35 +591,16 @@ echo DIV("cssmenu", UL(create_menu($docroot, $scriptname, $access)));
 if (!is_null($above))
   echo DIV("content", $above);
 
-if ($content & RANDOM_PICTURE)
-  $img_src = ""; # TODO
-else
-  if ($content & LOCAL_GALLERY)
-    $img_src = img_from_dir($content, "images_" . basename($scriptname, '.php'));
-  else
-    $img_src = img_from_dir($content) . img_from_dir($content, "images");
+if (!($content & BOTTOM_GALLERY))
+  gallery($content, $scriptname);
 
-if (!($content & NO_GALLERY)) {
-  if (strcmp($img_src, "") != 0) {
-    echo DIV("galleria", $img_src);
-?>
-
-<script>
-Galleria.loadTheme('/include/galleria/themes/classic/galleria.classic.min.js');
-Galleria.run('#galleria', {
-  autoplay: 7000 // will move forward every 7 seconds
-});
-//var gallery = Galleria.get(0);
-//gallery.play();
-</script>
-
-<?php
-  }
-}
 echo DIV("header", 0);
 echo DIV("body", 1);
 
 echo DIV("content", $below);
+
+if ($content & BOTTOM_GALLERY)
+  gallery($content, $scriptname);
 
 if (!($content & NO_COPYRIGHT)) {
 echo DIV("footer", P("Copyright: &copy; 2012 " . HREF("Weber Design", "#top", NULL, false)));
