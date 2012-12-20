@@ -17,6 +17,8 @@
 # 1.1 04-12-12 Fixed a bug (by removing a comma in a Gallery conf)
 # 1.2 05-12-12 
 # 1.3 05-12-12 Implemented LOCAL_GALLERY
+# 1.4
+# 1.5 17-12-12 Implemented RECUSIVE_GALLERY
 #
 # Include this file an you have a simple but full blown website with:
 # * Automagic menu
@@ -183,6 +185,11 @@ function HREF($text, $link, $target = NULL, $newline = true, $active = true)
     return $text . ($newline ? "\n" : "");
 }
 
+function ADDRESS($contentvalue = NULL)
+{
+  return expand("ADDRESS", $contentvalue);
+}
+
 function UL($contentvalue = NULL)
 {
   return expand("UL", $contentvalue);
@@ -316,7 +323,7 @@ function create_menu($docroot, $scriptname, $access)
         if (is_file($docroot . '/' . $entry)) {
           $control = cms_control($docroot . '/' . $entry, $access);
           if (strcmp($entry, DEFAULT_PAGE) == 0 or strcmp($entry, DEFAULT_TEST) == 0)
-            $entry = DEFAULT_TEST;
+            $entry = DEFAULT_PAGE;
           if ($control[3] >= DEFAULT_LEVEL)
             $file[$control[0]] = HREF(SPAN($control[2], false), '/' . $entry, NULL, false);
         }
@@ -458,6 +465,14 @@ function gallery($content, $scriptname)
         $img_src .= img_from_dir($content, 'images/');
         if ($content & RECURSIVE_GALLERY) {
           # TODO
+          #if ($hDir = opendir('.')) {
+          #  while (($entry = readdir($hDir)) !== false) {
+          #    if (is_dir($entry)) {
+          #      print ']' . $entry . '[';
+          #    }
+          #  }
+          #  closedir($hDir);
+          #}
         }
       }
 
