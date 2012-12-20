@@ -73,7 +73,7 @@
 
 $error_level = $_REQUEST["error_level"]; # BUG sanitize
 
-#error_reporting(~0); # -1
+error_reporting(~0); # -1
 
 #############################################################################################
 #
@@ -262,8 +262,9 @@ function cms_control($scriptfilename, $access)
         $handle = fopen($scriptfilename, "r");
         $control = fgets($handle);
         fclose($handle);
-        if (ereg("<\?php +# +([0-9]+)([\!\*\+-])(.*)", $control, $regs)) {
-          $level = strpos('!*+-', $regs[2]);
+        #if (ereg("<\?php +# +([0-9]+)([\!\*\+-])(.*)", $control, $regs)) {
+        if (preg_match("/^<\?php +# +([0-9]+)([\!\*\+-])(.*)/", $control, $regs)) {
+          $level = strpos('!*+-/\\', $regs[2]); # \/\\
           if ($access >= $level) {
             $header = array($regs[1], $regs[2], htmlspecialchars(rtrim($regs[3])), $level);
           }
@@ -331,6 +332,7 @@ function create_menu($docroot, $scriptname, $access)
     }
     closedir($hDir);
   }
+
   $html = '';
 
   if (!is_null($folder))
@@ -406,6 +408,9 @@ function img_from_dir($options = NULL, $imagedir = "")
   else
     if (strcmp(substr($imagedir, -1), '/') != 0)
       $imagedir .= '/';
+
+  $images = NULL;
+
   if (file_exists($imagedir) and $hDir = opendir($imagedir)) {
     if (file_exists($imagedir . IMG_ALT_FILE))
       if ($img_alt_file = fopen($imagedir . 'images.alt', 'r')) {
@@ -448,7 +453,7 @@ function img_from_dir($options = NULL, $imagedir = "")
 #
 #
 
-function gallery($content, $scriptname)
+function gallery($content, $scriptname, $access)
 {
   if (!($content & NO_GALLERY)) {
     $path_parts = pathinfo($scriptname);
@@ -464,15 +469,43 @@ function gallery($content, $scriptname)
         $img_src = img_from_dir($content);
         $img_src .= img_from_dir($content, 'images/');
         if ($content & RECURSIVE_GALLERY) {
-          # TODO
-          #if ($hDir = opendir('.')) {
-          #  while (($entry = readdir($hDir)) !== false) {
-          #    if (is_dir($entry)) {
-          #      print ']' . $entry . '[';
-          #    }
-          #  }
-          #  closedir($hDir);
-          #}
+          # TODO DUP CODE! :-(
+          if ($hDir = opendir('.')) {
+            while (($entry = readdir($hDir)) !== false) {
+              if (is_dir($entry)) {
+                if ($entry[0] != '.') {
+                  $control = cms_control($entry . '/' . DEFAULT_PAGE, $access);
+                  if ($control[3] >= DEFAULT_LEVEL) {
+                    if ($hFiles = opendir($entry)) {
+                      $files = NULL;
+                      while (($fil = readdir($hFiles)) !== false) {
+                        if (is_file($entry . '/' . $fil)) {
+                          $ctrl = cms_control($entry . '/' . $fil, $access);
+                          if ($ctrl[3] >= DEFAULT_LEVEL) {
+                            $image_parts = pathinfo($fil);
+                            $img_src .= img_from_dir($content, $entry . '/images_' .
+                                                     $image_parts['filename'] . '/');
+                          }
+                        }
+                      }
+                      closedir($hFiles);
+                    }
+                    $img_src .= img_from_dir($content, $entry);
+                    $img_src .= img_from_dir($content, $entry . 'images/');
+                  }
+                }
+              } #else {
+              #  if (is_file($entry)) {
+              #    $control = cms_control($docroot . '/' . $entry, $access);
+              #    if (strcmp($entry, DEFAULT_PAGE) == 0 or strcmp($entry, DEFAULT_TEST) == 0)
+              #      $entry = DEFAULT_PAGE;
+              #    if ($control[3] >= DEFAULT_LEVEL)
+              #      $file[$control[0]] = HREF(SPAN($control[2], false), '/' . $entry, NULL, false);
+              #  }
+              #}
+            }
+            closedir($hDir);
+          }
         }
       }
 
@@ -528,10 +561,12 @@ function php($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
   if (is_null($fakeroot))
     $fakeroot = $docroot;
 
-  $debug = $_REQUEST["debug"]; # BUG sanitize
-  $access = $_REQUEST["access"]; # BUG sanitize
-  if (is_null($access))
-    $access = DEFAULT_LEVEL;
+  $debug = 0;
+  if (isset($_REQUEST["debug"]))
+    $debug = $_REQUEST["debug"]; # BUG sanitize
+  $access = DEFAULT_LEVEL;
+  if (isset($_REQUEST["access"]))
+    $access = $_REQUEST["access"]; # BUG sanitize
 
   $control = cms_control($scriptfilename, $access);
   if ($control[0] < 0) { # Deny access to pages not accessable
@@ -607,7 +642,7 @@ if (!is_null($above))
   echo DIV("content", $above);
 
 if (!($content & BOTTOM_GALLERY))
-  gallery($content, $scriptname);
+  gallery($content, $scriptname, $access);
 
 echo DIV("header", 0);
 echo DIV("body", 1);
@@ -615,7 +650,7 @@ echo DIV("body", 1);
 echo DIV("content", $below);
 
 if ($content & BOTTOM_GALLERY)
-  gallery($content, $scriptname);
+  gallery($content, $scriptname, $access);
 
 if (!($content & NO_COPYRIGHT)) {
 echo DIV("footer", P("Copyright: &copy; 2012 " . HREF("Weber Design", "#top", NULL, false)));
