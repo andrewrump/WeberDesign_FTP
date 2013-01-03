@@ -19,6 +19,8 @@
 # 1.3 05-12-12 Implemented LOCAL_GALLERY
 # 1.4
 # 1.5 17-12-12 Implemented RECUSIVE_GALLERY
+# 1.6 20-12-12 Implemented RECUSIVE_GALLERY
+# 1.7 20-12-12 Implemented TABLE extra
 #
 # Include this file an you have a simple but full blown website with:
 # * Automagic menu
@@ -101,7 +103,7 @@ function fixtags($text) {
 
 #########################
 
-function expand($HTML, $contentvalue = NULL, $newline = true, $attributes = NULL)
+function expand($HTML, $contentvalue = NULL, $newline = true, $attributes = NULL, $extra = NULL)
 {
   if (is_null($contentvalue) or is_numeric($contentvalue))
     if (!is_null($contentvalue) and $contentvalue)
@@ -208,13 +210,14 @@ function LI($contentvalue = NULL, $id = NULL, $class = NULL, $newline = true)
     return $LI . $contentvalue . "</LI>" . ($newline ? "\n" : "");
 }
 
-function IMG($path, $alternate = NULL, $newline = true)
+function IMG($path, $alternate = NULL, $newline = true, $extra = NULL)
 {
-  if (is_null($alternate))
-    return "<IMG SRC='" . $path . "'>" . ($newline ? "\n" : "");
-  else
-    return "<IMG SRC='" . $path . "' ALT='" . htmlspecialchars($alternate) . "'>" .
-           ($newline ? "\n" : "");
+  $img = "<IMG SRC='" . $path . "'";
+  if (!is_null($alternate))
+    $img .= " ALT='" . htmlspecialchars($alternate) . "'";
+  if (!is_null($extra))
+    $img .= " " . $extra;
+  return $img . '>' . ($newline ? "\n" : "");
 }
 
 function SPAN($contentvalue, $newline = true, $attributes = NULL)
@@ -232,14 +235,14 @@ function TR($contentvalue)
   return expand("TR", $contentvalue);
 }
 
-function TH($contentvalue, $return = true)
+function TH($contentvalue, $newline = true, $extra = NULL)
 {
-  return expand("TH", $contentvalue, $newline);
+  return expand("TH", $contentvalue, $newline, $extra);
 }
 
-function TD($contentvalue, $return = true)
+function TD($contentvalue, $newline = true, $extra = NULL)
 {
-  return expand("TD", $contentvalue, $newline);
+  return expand("TD", $contentvalue, $newline, $extra);
 }
 
 #############################################################################################
