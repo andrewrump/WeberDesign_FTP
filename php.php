@@ -402,7 +402,7 @@ function create_menu($docroot, $scriptname, $access)
         if (is_file($docroot . '/' . $entry)) {
           $control = cms_control($docroot . '/' . $entry, $access);
           if (strcmp($entry, DEFAULT_PAGE) == 0 or strcmp($entry, DEFAULT_TEST) == 0)
-            $entry = '';
+            $entry = DEFAULT_PAGE;
           if ($control[3] >= DEFAULT_LEVEL)
             $file[$control[0]] = HREF(SPAN($control[2], false), '/' . $entry, NULL, false);
         }
