@@ -1,7 +1,8 @@
 <?php
+####################################################################################################
 #
 # PHP - Personal Home Page system
-# Copyright 2012: Andrew Rump (andrew-nospam@rump.dk)
+# Copyright 2012-2013: Andrew Rump (andrew-nospam@rump.dk)
 #
 # History
 # 0.1 12-11-12 Created
@@ -29,11 +30,41 @@
 # * CSS support
 # * Easy HTML code generation
 #
+
+####################################################################################################
+#
+# Configuration
+#
+
+define('SITE_NAME', 'Weber Design');
+define('DEFAULT_CSS', "/include/birgith.css");
+
+#############################################################################################
+#
+# Call php in each php file with the content you want on that page and you are done!
+# Use the values below to configure the content on the page
+#
+
+define('NO_OPTIONS', 0);
+define('NO_GALLERY', NO_OPTIONS);
+define('RANDOM_PICTURE', 1);
+define('LOCAL_GALLERY', 2 * RANDOM_PICTURE);
+define('RANDOM_GALLERY', 2 * LOCAL_GALLERY);
+define('RECURSIVE_GALLERY', 2 * RANDOM_GALLERY);
+define('BOTTOM_GALLERY', 2 * RECURSIVE_GALLERY);
+define('GALLERY_OPTIONS', RANDOM_PICTURE + LOCAL_GALLERY + RANDOM_GALLERY +
+       RECURSIVE_GALLERY + BOTTOM_GALLERY);
+define('NO_SHARE', 2 * BOTTOM_GALLERY);
+define('NO_COPYRIGHT', 2 * NO_SHARE);
+
+####################################################################################################
+#
 # BUGS:
-# 12-11-12 *Menu code not working
+# 12-11-12 A lot of cleanup required! A lot of duplicat and badly written code
 # 19-11-12 +Files in the top folder are not made submenu to the top menu?!?
 # 24-11-12 +Using the wrong charset in <HEAD>
 # 14-12-12 RANDOM_GALLERY only randomize each directory and not all images
+# 05-01-13 Folders should have / at the end (or an extra roundtrip to the server is performed)
 # TODO:
 # 15-11-12 +Use htmlspecialchars() in HREF() and escape possible
 # 15-11-12 +Cleanup $dirname usage
@@ -48,6 +79,7 @@
 # 26-11-12 +Baggrundsbillede
 # 26-11-12 *Copyright med mere hele ned i bunden
 # DONE:
+# 12-11-12 *Menu code not working
 # 13-11-12 -Remove newline from title from control file
 # 12-11-12 +Center footer and gallery
 # 15-11-12 +Put some code above gallery, e.g., header
@@ -60,6 +92,7 @@
 # 17-11-12 -Find images recursively
 #
 
+####################################################################################################
 #<FORM method="post" action="http://www.dit-domæne.dk/cgi-bin/FormMail.pl">
 #<input type="hidden" name="recipient" value="mail@dit-domæne.dk">
 #<input type="hidden" name="subject" value="Her kan du skrive en emne-tekst">
@@ -73,13 +106,18 @@
 #<INPUT TYPE="Reset" VALUE="Nulstil"><INPUT TYPE="Submit" VALUE="Send">
 #</form>
 
+####################################################################################################
+#
+
 $error_level = $_REQUEST["error_level"]; # BUG sanitize
 
 error_reporting(~0); # -1
+error_reporting(E_ALL);
 
 #############################################################################################
 #
 # Default values
+#
 
 define('DEFAULT_LEVEL', 1);
 define('DEFAULT_PAGE', 'index.php');
@@ -89,6 +127,7 @@ define('IMG_ALT_FILE', 'images.alt');
 #############################################################################################
 #
 # HTML helper functions
+#
 
 function fixtags($text) {
   $text = htmlspecialchars($text);
@@ -101,7 +140,8 @@ function fixtags($text) {
   return $text;
 }
 
-#########################
+#############################################################################################
+#
 
 function expand($HTML, $contentvalue = NULL, $newline = true, $attributes = NULL, $extra = NULL)
 {
@@ -135,40 +175,56 @@ function DIV($id = NULL, $contentvalue = NULL, $newline = true)
     return "<DIV ID='" . $id. "'>\n" . $contentvalue . "</DIV>" . ($newline ? "\n" : "");
 }
 
+#############################################################################################
+
 function H($level, $header)
 {
   return "<H" . $level . ">" . $header . "</H" . $level . ">\n";
 }
+
+#############################################################################################
 
 function P($paragraph)
 {
   return "<P>" . $paragraph . "</P>\n";
 }
 
+#############################################################################################
+
 function B($paragraph, $newline = false)
 {
   return "<B>" . $paragraph . "</B>" . ($newline ? "\n" : "");
 }
+
+#############################################################################################
 
 function EM($paragraph, $newline = false)
 {
   return "<EM>" . $paragraph . "</EM>" . ($newline ? "\n" : "");
 }
 
+#############################################################################################
+
 function BLOCKQUOTE($contentvalue = NULL)
 { # cite="http"
   return expand("BLOCKQUOTE", $contentvalue);
 }
+
+#############################################################################################
 
 function HR()
 {
   return "<HR>\n";
 }
 
+#############################################################################################
+
 function BR()
 {
   return "<BR>\n";
 }
+
+#############################################################################################
 
 function HREF($text, $link, $target = NULL, $newline = true, $active = true)
 {
@@ -187,15 +243,21 @@ function HREF($text, $link, $target = NULL, $newline = true, $active = true)
     return $text . ($newline ? "\n" : "");
 }
 
+#############################################################################################
+
 function ADDRESS($contentvalue = NULL)
 {
   return expand("ADDRESS", $contentvalue);
 }
 
+#############################################################################################
+
 function UL($contentvalue = NULL)
 {
   return expand("UL", $contentvalue);
 }
+
+#############################################################################################
 
 function LI($contentvalue = NULL, $id = NULL, $class = NULL, $newline = true)
 {
@@ -210,6 +272,8 @@ function LI($contentvalue = NULL, $id = NULL, $class = NULL, $newline = true)
     return $LI . $contentvalue . "</LI>" . ($newline ? "\n" : "");
 }
 
+#############################################################################################
+
 function IMG($path, $alternate = NULL, $newline = true, $extra = NULL)
 {
   $img = "<IMG SRC='" . $path . "'";
@@ -220,25 +284,35 @@ function IMG($path, $alternate = NULL, $newline = true, $extra = NULL)
   return $img . '>' . ($newline ? "\n" : "");
 }
 
+#############################################################################################
+
 function SPAN($contentvalue, $newline = true, $attributes = NULL)
 {
   return expand("SPAN", $contentvalue, $newline, $attributes);
 }
+
+#############################################################################################
 
 function TABLE($contentvalue)
 {
   return expand("TABLE", $contentvalue);
 }
 
+#############################################################################################
+
 function TR($contentvalue)
 {
   return expand("TR", $contentvalue);
 }
 
+#############################################################################################
+
 function TH($contentvalue, $newline = true, $extra = NULL)
 {
   return expand("TH", $contentvalue, $newline, $extra);
 }
+
+#############################################################################################
 
 function TD($contentvalue, $newline = true, $extra = NULL)
 {
@@ -251,6 +325,7 @@ function TD($contentvalue, $newline = true, $extra = NULL)
 # from the file and extract the: order number, access control and header from the file.
 # The access control has the following access levels:
 # ! = invisible (e.g., 404), * = everyone, + = 2, - = 3, ...
+#
 
 function cms_control($scriptfilename, $access)
 {
@@ -319,15 +394,15 @@ function create_menu($docroot, $scriptname, $access)
               }
               closedir($hFiles);
             }
-            $folder[$control[0]] = array(HREF(SPAN($control[2], false), '/' . $entry, NULL, false),
-                                         $files);
+            $folder[$control[0]] = array(HREF(SPAN($control[2], false), '/' . $entry . '/',
+                                                   NULL, false), $files);
           }
         }
       } else {
         if (is_file($docroot . '/' . $entry)) {
           $control = cms_control($docroot . '/' . $entry, $access);
           if (strcmp($entry, DEFAULT_PAGE) == 0 or strcmp($entry, DEFAULT_TEST) == 0)
-            $entry = DEFAULT_PAGE;
+            $entry = '';
           if ($control[3] >= DEFAULT_LEVEL)
             $file[$control[0]] = HREF(SPAN($control[2], false), '/' . $entry, NULL, false);
         }
@@ -458,7 +533,7 @@ function img_from_dir($options = NULL, $imagedir = "")
 
 function gallery($content, $scriptname, $access)
 {
-  if (!($content & NO_GALLERY)) {
+  if ($content & GALLERY_OPTIONS) {
     $path_parts = pathinfo($scriptname);
     if ($content & RANDOM_PICTURE)
       $img_src = ""; # TODO
@@ -497,15 +572,18 @@ function gallery($content, $scriptname, $access)
                     $img_src .= img_from_dir($content, $entry . 'images/');
                   }
                 }
-              } #else {
-              #  if (is_file($entry)) {
-              #    $control = cms_control($docroot . '/' . $entry, $access);
-              #    if (strcmp($entry, DEFAULT_PAGE) == 0 or strcmp($entry, DEFAULT_TEST) == 0)
-              #      $entry = DEFAULT_PAGE;
-              #    if ($control[3] >= DEFAULT_LEVEL)
-              #      $file[$control[0]] = HREF(SPAN($control[2], false), '/' . $entry, NULL, false);
-              #  }
-              #}
+              } else {
+                if (is_file($entry)) {
+                  $control = cms_control($entry, $access);
+                  if (strcmp($entry, DEFAULT_PAGE) == 0 or strcmp($entry, DEFAULT_TEST) == 0)
+                    $entry = DEFAULT_PAGE;
+                  if ($control[3] >= DEFAULT_LEVEL) {
+                    $image_parts = pathinfo($entry);
+                    $img_src .= img_from_dir($content, 'images_' .
+                                             $image_parts['filename'] . '/');
+                  }
+                }
+              }
             }
             closedir($hDir);
           }
@@ -531,21 +609,12 @@ Galleria.run('#galleria', {
 
 #############################################################################################
 #
-#
-#
-
-define('NO_OPTIONS', 0);
-define('NO_GALLERY', 1);
-define('LOCAL_GALLERY', 2 * NO_GALLERY);
-define('RANDOM_GALLERY', 2 * LOCAL_GALLERY);
-define('RANDOM_PICTURE', 2 * RANDOM_GALLERY);
-define('RECURSIVE_GALLERY', 2 * RANDOM_PICTURE);
-define('BOTTOM_GALLERY', 2 * RECURSIVE_GALLERY);
-define('NO_SHARE', 2 * BOTTOM_GALLERY);
-define('NO_COPYRIGHT', 2 * NO_SHARE);
-
-define('DEFAULT_CSS', "/include/birgith.css");
-
+# Call php in each php file with the content you want on that page and you are done!
+# $content contains the configuration value specified at the beginning of this file.
+# $above is the content above the gallery
+# $below is the content below the gallery
+# $css is used if you want to use another css
+# $fakeroot is used if you want to change root
 #
 
 function php($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
@@ -579,6 +648,8 @@ function php($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
     #require $docroot . "/404.php";
     exit;
   }
+
+#############################################################################################
 ?>
 <!DOCTYPE HTML>
 <!--[if lte IE 6]>
@@ -591,7 +662,7 @@ function php($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
 <!--[if (gt IE 9)|!(IE)]><HTML LANG="DA"><![endif]-->
 <HEAD>
 
-<TITLE><?=$control[2]; ?></TITLE>
+<TITLE><?=$control[2] . ' - ' . SITE_NAME; ?></TITLE>
 
 <META content="text/html; charset=windows-1252" http-equiv=Content-Type>
 <!--<META CONTENT="TEXT/HTML; CHARSET=WINDOWS-1252" HTTP-EQUIV=CONTENT-TYPE>-->
@@ -602,8 +673,8 @@ function php($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
 
 <META NAME="Author" CONTENT="Birgith Weber, Nicoline Weber & Andrew Rump">
 <META NAME="Generator" CONTENT="Automagically generated by Andrew Rump!">
-<META NAME="Timestamp" CONTENT="<?= date("F d, Y H:i:s"); ?>">
-<META NAME="Copyright" CONTENT="Copyright©: 2012 Andrew Rump">
+<META NAME="Timestamp" CONTENT="<?=date("F d, Y H:i:s"); ?>">
+<META NAME="Copyright" CONTENT="Copyright©: 2012-<?=date('Y'); ?> Andrew Rump">
 
 <LINK REL="Stylesheet" TYPE="TEXT/CSS" HREF="<?= $css; ?>">
 <LINK REL="Stylesheet" TYPE="TEXT/CSS" HREF="/include/galleria/themes/classic/galleria.classic.css">
@@ -656,7 +727,7 @@ if ($content & BOTTOM_GALLERY)
   gallery($content, $scriptname, $access);
 
 if (!($content & NO_COPYRIGHT)) {
-echo DIV("footer", P("Copyright: &copy; 2012 " . HREF("Weber Design", "#top", NULL, false)));
+echo DIV("footer", P("Copyright: &copy; 2012-" . date('Y') . " " . HREF("Weber Design", "#top", NULL, false)));
 }
 
 echo DIV("body", 0);
@@ -698,7 +769,13 @@ if ($debug)
 <div id="right"></div>
 <div id="top"></div>
 <div id="bottom"></div>
+<?php
+if (date('n') == 12 or date('n') == 1) {
+?>
 <SCRIPT TYPE="text/javascript" SRC="/include/snow.js"></SCRIPT>
+<?php
+}
+?>
 </BODY>
 </HTML>
 <?php
