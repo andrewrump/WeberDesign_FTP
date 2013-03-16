@@ -22,6 +22,8 @@
 # 1.5 17-12-12 Implemented RECUSIVE_GALLERY
 # 1.6 20-12-12 Implemented RECUSIVE_GALLERY
 # 1.7 20-12-12 Implemented TABLE extra
+# 1.8 xx-01-13 Enhanced the snow JavaScript to show falen stars
+# 1.9 15-03-13 Fixed a bug after One.com enhanced security
 #
 # Include this file an you have a simple but full blown website with:
 # * Automagic menu
@@ -38,6 +40,7 @@
 
 define('SITE_NAME', 'Weber Design');
 define('DEFAULT_CSS', "/include/birgith.css");
+define('VERSION', "1.9");
 
 #############################################################################################
 #
@@ -142,6 +145,8 @@ function fixtags($text) {
 
 #############################################################################################
 #
+# Expand HTML statements
+#
 
 function expand($HTML, $contentvalue = NULL, $newline = true, $attributes = NULL, $extra = NULL)
 {
@@ -163,6 +168,9 @@ function expand($HTML, $contentvalue = NULL, $newline = true, $attributes = NULL
 }
 
 #############################################################################################
+#
+# HTML DIV tag
+#
 
 function DIV($id = NULL, $contentvalue = NULL, $newline = true)
 {
@@ -176,6 +184,9 @@ function DIV($id = NULL, $contentvalue = NULL, $newline = true)
 }
 
 #############################################################################################
+#
+# HTML Header tag
+#
 
 function H($level, $header)
 {
@@ -183,6 +194,9 @@ function H($level, $header)
 }
 
 #############################################################################################
+#
+# HTML Paragraph tag
+#
 
 function P($paragraph)
 {
@@ -190,6 +204,9 @@ function P($paragraph)
 }
 
 #############################################################################################
+#
+# HTML Bold tag
+#
 
 function B($paragraph, $newline = false)
 {
@@ -197,6 +214,9 @@ function B($paragraph, $newline = false)
 }
 
 #############################################################################################
+#
+# HTML EMpazise tag
+#
 
 function EM($paragraph, $newline = false)
 {
@@ -204,6 +224,9 @@ function EM($paragraph, $newline = false)
 }
 
 #############################################################################################
+#
+# HTML BLOCKQUOTE tag
+#
 
 function BLOCKQUOTE($contentvalue = NULL)
 { # cite="http"
@@ -211,6 +234,9 @@ function BLOCKQUOTE($contentvalue = NULL)
 }
 
 #############################################################################################
+#
+# HTML Horizontal Row tag
+#
 
 function HR()
 {
@@ -218,6 +244,9 @@ function HR()
 }
 
 #############################################################################################
+#
+# HTML BReak tag
+#
 
 function BR()
 {
@@ -225,6 +254,9 @@ function BR()
 }
 
 #############################################################################################
+#
+# HTML HREF tag
+#
 
 function HREF($text, $link, $target = NULL, $newline = true, $active = true)
 {
@@ -244,6 +276,9 @@ function HREF($text, $link, $target = NULL, $newline = true, $active = true)
 }
 
 #############################################################################################
+#
+# HTML ADDRESS tag
+#
 
 function ADDRESS($contentvalue = NULL)
 {
@@ -251,6 +286,9 @@ function ADDRESS($contentvalue = NULL)
 }
 
 #############################################################################################
+#
+# HTML Unordered List tag
+#
 
 function UL($contentvalue = NULL)
 {
@@ -258,6 +296,19 @@ function UL($contentvalue = NULL)
 }
 
 #############################################################################################
+#
+# HTML Oordered List tag
+#
+
+function OL($contentvalue = NULL)
+{
+  return expand("OL", $contentvalue);
+}
+
+#############################################################################################
+#
+# HTML LIst tag
+#
 
 function LI($contentvalue = NULL, $id = NULL, $class = NULL, $newline = true)
 {
@@ -273,6 +324,9 @@ function LI($contentvalue = NULL, $id = NULL, $class = NULL, $newline = true)
 }
 
 #############################################################################################
+#
+# HTML IMaGe tag
+#
 
 function IMG($path, $alternate = NULL, $newline = true, $extra = NULL)
 {
@@ -285,6 +339,9 @@ function IMG($path, $alternate = NULL, $newline = true, $extra = NULL)
 }
 
 #############################################################################################
+#
+# HTML SPAN tag
+#
 
 function SPAN($contentvalue, $newline = true, $attributes = NULL)
 {
@@ -292,6 +349,9 @@ function SPAN($contentvalue, $newline = true, $attributes = NULL)
 }
 
 #############################################################################################
+#
+# HTML TABLE tag
+#
 
 function TABLE($contentvalue)
 {
@@ -299,6 +359,9 @@ function TABLE($contentvalue)
 }
 
 #############################################################################################
+#
+# HTML Table Row tag
+#
 
 function TR($contentvalue)
 {
@@ -306,6 +369,9 @@ function TR($contentvalue)
 }
 
 #############################################################################################
+#
+# HTML Table Heading tag
+#
 
 function TH($contentvalue, $newline = true, $extra = NULL)
 {
@@ -313,6 +379,9 @@ function TH($contentvalue, $newline = true, $extra = NULL)
 }
 
 #############################################################################################
+#
+# HTML Table Data tag
+#
 
 function TD($contentvalue, $newline = true, $extra = NULL)
 {
@@ -355,6 +424,9 @@ function cms_control($scriptfilename, $access)
 
 #############################################################################################
 #
+# Create a menu structure by checking all the files and make a Unordered List with CSS tags
+# which CssMenuMaker can work with
+#
 # http://cssmenumaker.com
 #
 
@@ -376,8 +448,8 @@ function create_menu($docroot, $scriptname, $access)
 {
   if ($hDir = opendir($docroot)) {
     while (($entry = readdir($hDir)) !== false) {
-      if (is_dir($docroot . '/' . $entry)) {
-        if ($entry[0] != '.') {
+      if ($entry[0] != '.' and $entry[0] != '..') { # Assume . and .. are dir to avoid warnings
+        if (is_dir($docroot . '/' . $entry)) {
           $control = cms_control($docroot . '/' . $entry . '/' . DEFAULT_PAGE, $access);
           if ($control[3] >= DEFAULT_LEVEL) {
             if ($hFiles = opendir($docroot . '/' . $entry)) {
@@ -397,14 +469,14 @@ function create_menu($docroot, $scriptname, $access)
             $folder[$control[0]] = array(HREF(SPAN($control[2], false), '/' . $entry . '/',
                                                    NULL, false), $files);
           }
-        }
-      } else {
-        if (is_file($docroot . '/' . $entry)) {
-          $control = cms_control($docroot . '/' . $entry, $access);
-          if (strcmp($entry, DEFAULT_PAGE) == 0 or strcmp($entry, DEFAULT_TEST) == 0)
-            $entry = DEFAULT_PAGE;
-          if ($control[3] >= DEFAULT_LEVEL)
-            $file[$control[0]] = HREF(SPAN($control[2], false), '/' . $entry, NULL, false);
+        } else {
+          if (is_file($docroot . '/' . $entry)) {
+            $control = cms_control($docroot . '/' . $entry, $access);
+            if (strcmp($entry, DEFAULT_PAGE) == 0 or strcmp($entry, DEFAULT_TEST) == 0)
+              $entry = '';
+            if ($control[3] >= DEFAULT_LEVEL)
+              $file[$control[0]] = HREF(SPAN($control[2], false), '/' . $entry, NULL, false);
+          }
         }
       }
     }
@@ -476,7 +548,8 @@ function create_menu($docroot, $scriptname, $access)
 
 #############################################################################################
 #
-#
+# Find all image files and correspondong IMG_ALT_FILE (which contains ALTernate text to
+# the IMaGes and create a list of files
 #
 
 function img_from_dir($options = NULL, $imagedir = "")
@@ -528,7 +601,7 @@ function img_from_dir($options = NULL, $imagedir = "")
 
 #############################################################################################
 #
-#
+# Take (a) list(s) of images and write them out in a format ready for Gallery to work with them
 #
 
 function gallery($content, $scriptname, $access)
@@ -650,6 +723,9 @@ function php($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
   }
 
 #############################################################################################
+#
+# Write out HTML header
+#
 ?>
 <!DOCTYPE HTML>
 <!--[if lte IE 6]>
@@ -710,11 +786,17 @@ if(top != self)
 <!-- Facebook Like -->
 
 <?php
+#############################################################################################
+#
+# Write out HTML body
+#
+
 echo DIV("cssmenu", UL(create_menu($docroot, $scriptname, $access)));
 
 if (!is_null($above))
   echo DIV("content", $above);
 
+# Gallery?
 if (!($content & BOTTOM_GALLERY))
   gallery($content, $scriptname, $access);
 
@@ -723,15 +805,23 @@ echo DIV("body", 1);
 
 echo DIV("content", $below);
 
+# Gallery?
 if ($content & BOTTOM_GALLERY)
   gallery($content, $scriptname, $access);
 
+# Copyright?
 if (!($content & NO_COPYRIGHT)) {
-echo DIV("footer", P("Copyright: &copy; 2012-" . date('Y') . " " . HREF("Weber Design", "#top", NULL, false)));
+  echo DIV("footer", P("Copyright: &copy; 2012-" . date('Y') . " " .
+           HREF("Weber Design", "#top", NULL, false)));
+# . "Version: " . VERSION
 }
 
 echo DIV("body", 0);
 
+#############################################################################################
+#
+# Share?
+#
 if (0 and ($content & NO_SHARE)) {
   echo DIV("footer");
 ?>
@@ -754,10 +844,19 @@ if (0 and ($content & NO_SHARE)) {
 <div class="fb-like" data-href="http://weberdesign.dk/" data-send="true" data-width="450" data-show-faces="true"></div>
 <!-- Facebook Like -->
 <?php
+#############################################################################################
+
   echo DIV("footer", 0);
 }
+
+#############################################################################################
+#
+# Debug?
+#
 if ($debug)
   phpinfo();
+
+#############################################################################################
 ?>
 <!--
 <script>
@@ -770,11 +869,21 @@ if ($debug)
 <div id="top"></div>
 <div id="bottom"></div>
 <?php
+#############################################################################################
+#
+# Animation
+#
 if (date('n') == 12 or date('n') == 1) {
 ?>
 <SCRIPT TYPE="text/javascript" SRC="/include/snow.js"></SCRIPT>
 <?php
+} else {
+?>
+<SCRIPT TYPE="text/javascript" SRC="/include/star.js"></SCRIPT>
+<?php
 }
+
+#############################################################################################
 ?>
 </BODY>
 </HTML>
