@@ -297,7 +297,7 @@ function UL($contentvalue = NULL)
 
 #############################################################################################
 #
-# HTML Oordered List tag
+# HTML Ordered List tag
 #
 
 function OL($contentvalue = NULL)
@@ -455,13 +455,15 @@ function create_menu($docroot, $scriptname, $access)
             if ($hFiles = opendir($docroot . '/' . $entry)) {
               $files = NULL;
               while (($fil = readdir($hFiles)) !== false) {
-                if (is_file($docroot . '/' . $entry . '/' . $fil)) {
-                  $ctrl = cms_control($docroot . '/' . $entry . '/' . $fil, $access);
-                  if (strcmp($fil, DEFAULT_PAGE) != 0 and strcmp($fil, DEFAULT_TEST) != 0)
-                    if ($ctrl[3] >= DEFAULT_LEVEL) {
-                      $files[$ctrl[0]] = HREF(SPAN($ctrl[2], false), '/' . $entry . '/' . $fil, NULL,
-                                              false);
-                    }
+                if ($fil != '.' and $fil != '..') { # Assume . and .. are dir to avoid warnings
+                  if (is_file($docroot . '/' . $entry . '/' . $fil)) {
+                    $ctrl = cms_control($docroot . '/' . $entry . '/' . $fil, $access);
+                    if (strcmp($fil, DEFAULT_PAGE) != 0 and strcmp($fil, DEFAULT_TEST) != 0)
+                      if ($ctrl[3] >= DEFAULT_LEVEL) {
+                        $files[$ctrl[0]] = HREF(SPAN($ctrl[2], false), '/' . $entry . '/' . $fil,
+                                                NULL, false);
+                      }
+                  }
                 }
               }
               closedir($hFiles);
@@ -571,16 +573,18 @@ function img_from_dir($options = NULL, $imagedir = "")
       }
 
     while (($entry = readdir($hDir)) !== false) {
-      if (is_file($imagedir . $entry)) {
-        $parts = explode(".", $entry);
-        if (is_array($parts) && count($parts) > 1) {
-          $ext = strtolower(end($parts));
-          if (strcmp($ext, "jpg") == 0 or strcmp($ext, "jpeg") == 0 or
-              strcmp($ext, "gif") == 0 or strcmp($ext, "png") == 0) {
-            if (isset($img_alt[$entry]))
-              $images[] .= IMG($imagedir . $entry, htmlspecialchars($img_alt[$entry]));
-            else
-              $images[] .= IMG($imagedir . $entry, $entry);
+      if ($entry != '.' and $entry != '..') { # Assume . and .. are dir to avoid warnings
+        if (is_file($imagedir . $entry)) {
+          $parts = explode(".", $entry);
+          if (is_array($parts) && count($parts) > 1) {
+            $ext = strtolower(end($parts));
+            if (strcmp($ext, "jpg") == 0 or strcmp($ext, "jpeg") == 0 or
+                strcmp($ext, "gif") == 0 or strcmp($ext, "png") == 0) {
+              if (isset($img_alt[$entry]))
+                $images[] .= IMG($imagedir . $entry, htmlspecialchars($img_alt[$entry]));
+              else
+                $images[] .= IMG($imagedir . $entry, $entry);
+            }
           }
         }
       }
@@ -623,8 +627,8 @@ function gallery($content, $scriptname, $access)
           # TODO DUP CODE! :-(
           if ($hDir = opendir('.')) {
             while (($entry = readdir($hDir)) !== false) {
-              if (is_dir($entry)) {
-                if ($entry[0] != '.') {
+              if ($entry[0] != '.' and $entry[0] != '..') { # Assume . and .. are dir to avoid warnings
+                if (is_dir($entry)) {
                   $control = cms_control($entry . '/' . DEFAULT_PAGE, $access);
                   if ($control[3] >= DEFAULT_LEVEL) {
                     if ($hFiles = opendir($entry)) {
@@ -644,16 +648,16 @@ function gallery($content, $scriptname, $access)
                     $img_src .= img_from_dir($content, $entry);
                     $img_src .= img_from_dir($content, $entry . 'images/');
                   }
-                }
-              } else {
-                if (is_file($entry)) {
-                  $control = cms_control($entry, $access);
-                  if (strcmp($entry, DEFAULT_PAGE) == 0 or strcmp($entry, DEFAULT_TEST) == 0)
-                    $entry = DEFAULT_PAGE;
-                  if ($control[3] >= DEFAULT_LEVEL) {
-                    $image_parts = pathinfo($entry);
-                    $img_src .= img_from_dir($content, 'images_' .
-                                             $image_parts['filename'] . '/');
+                } else {
+                  if (is_file($entry)) {
+                    $control = cms_control($entry, $access);
+                    if (strcmp($entry, DEFAULT_PAGE) == 0 or strcmp($entry, DEFAULT_TEST) == 0)
+                      $entry = DEFAULT_PAGE;
+                    if ($control[3] >= DEFAULT_LEVEL) {
+                      $image_parts = pathinfo($entry);
+                      $img_src .= img_from_dir($content, 'images_' .
+                                               $image_parts['filename'] . '/');
+                    }
                   }
                 }
               }
@@ -744,8 +748,8 @@ function php($content, $above, $below = NULL, $css = NULL, $fakeroot = NULL)
 <!--<META CONTENT="TEXT/HTML; CHARSET=WINDOWS-1252" HTTP-EQUIV=CONTENT-TYPE>-->
 <!--<META HTTP-EQUIV="content-type" CONTENT="text/html; CHARSET=UTF-8">-->
 
-<META NAME="Description" CONTENT="Weber Design, en verden af kreativitet. Smykker, billedkunst, kreativt værksted, ... - rum for fordybelse">
-<META NAME="Keywords" CONTENT="Birgith, Nicoline, Weber, Weber Design, design, smykker, smykkefremstilling, workshops, kreativitet, undervisning, kurser, indretning, engle, ikoner, billedkunst, decoupage, cup cake, blomsterbinding, blomsterkunst, ...">
+<META NAME="Description" CONTENT="Weber Design, en verden af kreativitet. Smykker, billedkunst, kreativt værksted, ... - rum for fordybelse. Unik kunsthåndværk med håndværksmæssig og kunstnerisk kvalitet.">
+<META NAME="Keywords" CONTENT="Birgith, Nicoline, Weber, Weber Design, design, smykker, smykkefremstilling, kunsthåndværk, workshops, kreativitet, undervisning, kurser, indretning, engle, ikoner, billedkunst, decoupage, cup cake, blomsterbinding, blomsterkunst, ...">
 
 <META NAME="Author" CONTENT="Birgith Weber, Nicoline Weber & Andrew Rump">
 <META NAME="Generator" CONTENT="Automagically generated by Andrew Rump!">
@@ -812,7 +816,8 @@ if ($content & BOTTOM_GALLERY)
 # Copyright?
 if (!($content & NO_COPYRIGHT)) {
   echo DIV("footer", P("Copyright: &copy; 2012-" . date('Y') . " " .
-           HREF("Weber Design", "#top", NULL, false)));
+           HREF("Weber Design", "#top", NULL, false)) . " " .
+           HREF("info@weberdesign.dk", "mailto:info@weberdesign.dk", 'target="_blank"', false));
 # . "Version: " . VERSION
 }
 

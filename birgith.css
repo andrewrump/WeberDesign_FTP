@@ -19,6 +19,11 @@ H1 { text-align: center; }
 
 body { color:white; background-color:black; }
 
+a:link {color:#00FFFF;}      /* unvisited link */
+a:visited {color:#9900FF;}  /* visited link */
+/* a:hover {color:#FF00FF;}  /* mouse over link */
+/* a:active {color:#0000FF;}  /* selected link */
+
 @media only screen and (device-width: 768px) {
   /* For general iPad layouts */
 }
@@ -114,7 +119,7 @@ body {
    position:absolute;
    bottom:0;
    /*width:100%;*/
-   margin-left: auto; margin-right: auto; width: 16em;
+   margin-left: auto; margin-right: auto; width: 50em;
    height:60px;   /* Height of the footer */
    font-size: x-small;
    /*background:#6cf;*/
