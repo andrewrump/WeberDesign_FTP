@@ -1,6 +1,6 @@
 Personal Home Page system (PHP) :-D
 
-By Andrew Rump (andrew@rump.dk) Copyright 2012-2015
+By Andrew Rump (andrew@rump.dk) Copyright 2012-2016
 
 This CMS is more a proof on concept than a working system.
 

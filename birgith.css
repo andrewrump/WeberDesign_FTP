@@ -1,10 +1,14 @@
 /***************************************************************************************************/
 
-* { font-family: Georgia, Verdana, Arial /*!important */;}
+* {
+    font-family: Georgia, Verdana, Arial /*!important */;
+}
 
 /*HR {color:sienna;}*/
 /*H1 { font-style: italic; text-align: center; }*/
-H1 { text-align: center; }
+H1 {
+    text-align: center;
+}
 /*H2 { font-style: italic; }*/
 /*H3 { font-style: italic; }*/
 /*H4 { font-style: italic; }*/
@@ -17,12 +21,19 @@ H1 { text-align: center; }
 
 /*h2 { padding: 0; margin: 0; }*/
 
-body { color:white; background-color:black; }
+body {
+    color: white;
+    background-color: #49B886;
+}
 
-a:link {color:#00FFFF;}      /* unvisited link */
-a:visited {color:#9900FF;}  /* visited link */
-/* a:hover {color:#FF00FF;}  /* mouse over link */
-/* a:active {color:#0000FF;}  /* selected link */
+a:link    { color:#00FFFF; }  /* unvisited link */
+a:visited { color:#9900FF; }  /* visited link */
+a:hover   { color:#00FFFF;}   /* mouse over link */
+a:active  { color: #9900FF;}  /* selected link */
+
+#center {
+    text-align: center;
+}
 
 @media only screen and (device-width: 768px) {
   /* For general iPad layouts */
@@ -34,16 +45,16 @@ a:visited {color:#9900FF;}  /* visited link */
 
 @media only screen and (min-device-width: 481px) and (max-device-width: 1024px) and (orientation:landscape) {
   /* For landscape layouts only */
-#container {
-width:800px;
-}
+    #container {
+        width:800px;
+    }
 }
 
 @media all {
     /* styles for narrow desktop browsers and iPad landscape */
-#container {
-width:800px;
-}
+    #container {
+        width:800px;
+    }
 }
 
 @media all and (max-width: 1024px) {
@@ -68,7 +79,7 @@ width:800px;
 
 /* http://css-tricks.com/body-border/ *************************************************************/
 #top, #bottom, #left, #right {
-   background: /*#C07BEE #3300c0 #00c0c0 #a5ebff*/ #99FFFF;
+   background: /*#C07BEE #3300c0 #00c0c0 #a5ebff #99FFFF*/ #49B886;
    position: fixed;
 }
 #left, #right {
